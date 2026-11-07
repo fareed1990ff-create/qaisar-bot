@@ -30,6 +30,11 @@ def get_rank(points):
             break
     return current, next_rank
 
+def get_mention(user):
+    if user.username:
+        return f"@{user.username}"
+    return f"{user.first_name}"
+
 def main_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🏆 الرتب والمستويات", callback_data="ranks")],
@@ -58,7 +63,10 @@ async def show_ranks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += f"{mark} {emoji} {name} - {req} نقطة\n"
     text += "\n💡 كل رسالة = +1 نقطة"
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ رجوع", callback_data="back")]])
-    await q.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=kb)
+    try:
+        await q.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=kb)
+    except:
+        await q.edit_message_text(text=text, parse_mode="HTML", reply_markup=kb)
 
 async def show_mycard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
@@ -74,13 +82,38 @@ async def show_mycard(update: Update, context: ContextTypes.DEFAULT_TYPE):
         nxt = "\n👑 وصلت لأعلى رتبة!"
     text = f"👤 <b>بطاقتك</b>\n\nالاسم: {name}\nالرتبة: {current[2]} {current[0]}\nالنقاط: {points}\n{nxt}"
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ رجوع", callback_data="back")]])
-    await q.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=kb)
+    try:
+        await q.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=kb)
+    except:
+        await q.edit_message_text(text=text, parse_mode="HTML", reply_markup=kb)
 
 async def back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
-    await q.edit_message_caption(caption="👑 <b>أهلا فيك في بوت القيصر</b>\n\nاختر من الأسفل:", parse_mode="HTML", reply_markup=main_keyboard())
+    try:
+        await q.edit_message_caption(caption="👑 <b>أهلا فيك في بوت القيصر</b>\n\nاختر من الأسفل:", parse_mode="HTML", reply_markup=main_keyboard())
+    except:
+        await q.edit_message_text(text="👑 <b>أهلا فيك في بوت القيصر</b>\n\nاختر من الأسفل:", parse_mode="HTML", reply_markup=main_keyboard())
 
+# --- الترحيب بالعضو الجديد + رتبته ---
+async def welcome_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.new_chat_members:
+        return
+    for member in update.message.new_chat_members:
+        if member.is_bot:
+            continue
+        mention = get_mention(member)
+        # العضو الجديد دايما ببلش من 0 نقطة = عضو جديد
+        current, _ = get_rank(0)
+        await update.message.reply_text(
+            f"👑 أهلا نورت يا {mention} 🔥\n\n"
+            f"أهلا فيك في مملكة القيصر 👑\n"
+            f"رتبتك: {current[2]} {current[0]}\n"
+            f"نقاطك: 0 نقطة 🌱\n\n"
+            f"اكتب /start عشان تشوف بطاقتك ✨"
+        )
+
+# --- رسائل الأعضاء + الترقية ---
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -103,7 +136,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["points"] = new_points
     new_rank, _ = get_rank(new_points)
     if new_rank[0] != old_rank[0]:
-        await update.message.reply_text(f"🎉 مبروك! ارتقيت لرتبة جديدة: {new_rank[2]} {new_rank[0]} 🔥")
+        mention = get_mention(update.message.from_user)
+        chat_type = update.message.chat.type
+        if chat_type in ["group", "supergroup"]:
+            await update.message.reply_text(
+                f"🎉 مبروووك يا {mention} 🔥🔥\n\n"
+                f"ارتقيت لرتبة جديدة: {new_rank[2]} {new_rank[0]} 👑\n"
+                f"رتبتك الجديدة: {new_rank[2]} {new_rank[0]}\n"
+                f"صار عندك {new_points} نقطة ✨\n"
+                f"استمر يا بطل!"
+            )
+        else:
+            await update.message.reply_text(f"🎉 مبروك! ارتقيت لرتبة جديدة: {new_rank[2]} {new_rank[0]} 🔥")
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     points = context.user_data.get("points", 0)
@@ -121,6 +165,7 @@ def main():
     app.add_handler(CallbackQueryHandler(show_ranks, pattern="^ranks$"))
     app.add_handler(CallbackQueryHandler(show_mycard, pattern="^mycard$"))
     app.add_handler(CallbackQueryHandler(back, pattern="^back$"))
+    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     from flask import Flask
