@@ -1,6 +1,6 @@
 import os
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 from flask import Flask
 import threading
 
@@ -12,10 +12,14 @@ def home():
     return "بوت القيصر شغال ✅"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("أهلا فيك ببوت القيصر الجديد 👑\nاكتب /رصيد")
+    await update.message.reply_text("اهلا فيك في بوت القيصر 👑\nاكتب /رصيد او /balance لتشوف رصيدك")
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("رصيدك: 0 نقطة 💰")
+    await update.message.reply_text("رصيدك : 0 نقطة")
+
+async def arabic_raseed(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.text and update.message.text.strip() == "رصيد":
+        await update.message.reply_text("رصيدك : 0 نقطة")
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
@@ -25,5 +29,6 @@ if __name__ == "__main__":
     threading.Thread(target=run_flask, daemon=True).start()
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("رصيد", balance))
+    app.add_handler(CommandHandler("balance", balance))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, arabic_raseed))
     app.run_polling()
