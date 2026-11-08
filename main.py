@@ -108,18 +108,17 @@ def make_progress(points, current, next_rank):
 
 def fix_arabic(t):
     t = str(t)
-    config = {'delete_harakat': True, 'support_ligatures': True}
-    reshaped = arabic_reshaper.reshape(t, configuration=config)
+    reshaped = arabic_reshaper.reshape(t)
     return get_display(reshaped)
 
 def get_font(size):
-    if not os.path.exists("Cairo-Bold.ttf"):
+    if not os.path.exists("Amiri-Regular.ttf"):
         try:
-            url = "https://github.com/google/fonts/raw/main/ofl/cairo/Cairo%5Bsln%2Cwght%5D.ttf"
-            urllib.request.urlretrieve(url, "Cairo-Bold.ttf")
+            url = "https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Regular.ttf"
+            urllib.request.urlretrieve(url, "Amiri-Regular.ttf")
         except Exception as e:
             print("font download failed:", e)
-    for name in ["Cairo-Bold.ttf", "DejaVuSans-Bold.ttf"]:
+    for name in ["Amiri-Regular.ttf", "DejaVuSans-Bold.ttf"]:
         if os.path.exists(name):
             try:
                 return ImageFont.truetype(name, size)
