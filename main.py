@@ -11,9 +11,13 @@ from bidi.algorithm import get_display
 TOKEN = os.environ.get("BOT_TOKEN")
 DATA_FILE = "users.json"
 
-# هاي بس للصورة، مش للنص
+# هاي بس للصورة، مش للنص 
 def fix_arabic_img(text):
-    return str(text)
+    try:
+        reshaped = arabic_reshaper.reshape(str(text))
+        return get_display(reshaped)
+    except:
+        return str(text)
 def load_users():
     if not os.path.exists(DATA_FILE):
         return {}
