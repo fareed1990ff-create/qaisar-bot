@@ -107,9 +107,7 @@ def make_progress(points, current, next_rank):
     return f"[{bar}] {percent}%\n{done} / {total} نقطة\nضايلك {left} نقطة لـ {next_rank[2]} {next_rank[0]}"
 
 def fix_arabic(t):
-    t = str(t)
-    reshaped = arabic_reshaper.reshape(t)
-    return get_display(reshaped)
+    return str(t)
 
 def get_font(size):
     if not os.path.exists("Amiri-Regular.ttf"):
@@ -147,8 +145,12 @@ def create_balance_card(user_id, name):
     fs = get_font(30)
     def center(y, txt, font, fill):
         t = fix_arabic(txt)
-        w = draw.textbbox((0,0), t, font=font)[2]
-        draw.text(((W-w)//2, y), t, font=font, fill=fill)
+        try:
+            w = draw.textbbox((0,0), t, font=font, direction="rtl", language="ar")[2]
+            draw.text(((W-w)//2, y), t, font=font, fill=fill, direction="rtl", language="ar")
+        except:
+            w = draw.textbbox((0,0), t, font=font)[2]
+            draw.text(((W-w)//2, y), t, font=font, fill=fill)
     draw.rectangle([25,25,W-25,H-25], outline=gold, width=4)
     center(150, "بوت القيصر", fm, gold)
     center(230, "بطاقة الرصيد", fs, white)
@@ -289,58 +291,3 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_users(users)
     old_points = get_points(user_id)
     old_rank, _ = get_rank(old_points)
-    new_points = add_point(user_id)
-    new_rank, _ = get_rank(new_points)
-    new_data = get_user_data(user_id)
-    if new_data["messages"] % 10 == 0:
-        await update.message.reply_text(f"🎉 +1 🪙 عملة ذهبية! صار معك {new_data['coins']} عملة\nاكتب رصيد وشوف بطاقتك")
-    if new_rank[0] != old_rank[0]:
-        mention = get_mention(update.message.from_user)
-        if update.message.chat.type in ["group", "supergroup"]:
-            await update.message.reply_text(f"🎉 مبروووك يا {mention} 🔥🔥\n\nارتقيت لرتبة جديدة: {new_rank[2]} {new_rank[0]} 👑\nصار عندك {new_points} نقطة ✨\nاستمر يا بطل!")
-        else:
-            await update.message.reply_text(f"🎉 مبروك! ارتقيت لرتبة جديدة: {new_rank[2]} {new_rank[0]} 🔥")
-
-async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        card = create_balance_card(update.effective_user.id, update.effective_user.first_name)
-        with open(card, "rb") as f:
-            await update.message.reply_photo(photo=f, caption=f"بطاقتك يا {update.effective_user.first_name} 👑")
-        try:
-            os.remove(card)
-        except:
-            pass
-        return
-    except Exception as e:
-        print("card error:", e)
-    points = get_points(update.effective_user.id)
-    coins = get_coins(update.effective_user.id)
-    current, next_rank = get_rank(points)
-    progress = make_progress(points, current, next_rank)
-    await update.message.reply_text(f"👤 رصيدك: {points} نقطة\n🪙 عملاتك: {coins}\nرتبتك: {current[2]} {current[0]}\n\n📊 عداد التقدم:\n{progress}")
-
-def main():
-    print("Starting bot...")
-    if not TOKEN:
-        print("ERROR: BOT_TOKEN not found!")
-        return
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("balance", balance))
-    app.add_handler(CallbackQueryHandler(show_ranks, pattern="^ranks$"))
-    app.add_handler(CallbackQueryHandler(show_mycard, pattern="^mycard$"))
-    app.add_handler(CallbackQueryHandler(back, pattern="^back$"))
-    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    from flask import Flask
-    import threading
-    flask_app = Flask(__name__)
-    @flask_app.route("/")
-    def home():
-        return "Bot is running"
-    port = int(os.environ.get("PORT", 10000))
-    threading.Thread(target=lambda: flask_app.run(host="0.0.0.0", port=port), daemon=True).start()
-    app.run_polling(drop_pending_updates=True)
-
-if __name__ == "__main__":
-    main()
