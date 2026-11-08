@@ -135,13 +135,12 @@ async def daily(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("رصيد", balance))
-    app.add_handler(CommandHandler("ترتيب", leaderboard))
-    app.add_handler(CommandHandler("يومي", daily))
+    app.add_handler(MessageHandler(filters.Regex(r"^/رصيد$"), balance))
+    app.add_handler(MessageHandler(filters.Regex(r"^/ترتيب$"), leaderboard))
+    app.add_handler(MessageHandler(filters.Regex(r"^/يومي$"), daily))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     print("Bot started...")
     app.run_polling()
-
 if __name__ == "__main__":
     main()
 
