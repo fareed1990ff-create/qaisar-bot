@@ -122,15 +122,38 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(random.choice(QAYSAR_REPLIES))
         return
     if "احبك" in text or "بحبك" in text:
-        add_points(user.id, 5)
-        await update.message.reply_text("وانا بحبك اكتر ❤️ +5 نقاط")
-        return
-    add_points(user.id, 1)
+        def add_points(user_id, amount):
+    users = load_users()
+    uid = str(user_id)
+    if uid not in users:
+        users[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
+    if "coins" not in users[uid]:
+        users[uid]["coins"] = 0
+    if "msg_count" not in users[uid]:
+        users[uid]["msg_count"] = 0
+
+    users[uid]["points"] += amount
+    users[uid]["msg_count"] += 1
+
+    # كل 10 رسائل = 1 ذهبة
+    if users[uid]["msg_count"] >= 10:
+        users[uid]["coins"] += 1
+        users[uid]["msg_count"] = 0
+        save_users(users)
+        return users[uid]["points"], True
+
+    save_users(users)
+    return users[uid]["points"], False
 
 async def daily(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    coins = add_coins(user.id, 50)
+    coins = add_coins(user.id, 2)
     await update.message.reply_text(f"🎁 اخدت مكافأتك اليومية!\n+50 عملة\nصار معك: {coins} عملة")
+def fix_arabic(text):
+    try:
+        return get_display(reshaper.reshape(text))
+    except:
+        return text
 
 def main():
     app = Application.builder().token(TOKEN).build()
@@ -144,9 +167,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-def fix_arabic(text):
-    try:
-        return get_display(reshaper.reshape(text))
-    except:
-        return text
 
