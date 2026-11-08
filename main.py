@@ -66,9 +66,12 @@ def make_card(name, points, coins):
     d = ImageDraw.Draw(img)
     d.rectangle([20, 20, W-20, H-20], outline=(212, 175, 55), width=4)
     try:
-        font_big = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 55)
-        font_mid = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
-        font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
+        import urllib.request
+        if not os.path.exists("Amiri-Regular.ttf"):
+            urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Regular.ttf", "Amiri-Regular.ttf")
+        font_big = ImageFont.truetype("Amiri-Regular.ttf", 70)
+        font_mid = ImageFont.truetype("Amiri-Regular.ttf", 50)
+        font_small = ImageFont.truetype("Amiri-Regular.ttf", 38)
     except:
         font_big = ImageFont.load_default()
         font_mid = font_big
