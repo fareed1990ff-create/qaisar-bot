@@ -13,10 +13,7 @@ DATA_FILE = "users.json"
 
 # هاي بس للصورة، مش للنص
 def fix_arabic_img(text):
-    try:return get_display(arabic_reshaper.reshape(str(text)))
-    except:
-        return str(text)
-
+    return str(text)
 def load_users():
     if not os.path.exists(DATA_FILE):
         return {}
