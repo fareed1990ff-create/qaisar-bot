@@ -1,14 +1,22 @@
 import os
 import json
 import random
+import io
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from PIL import Image, ImageDraw, ImageFont
+from arabic_reshaper import reshaper
+from bidi.algorithm import get_display
 
 TOKEN = os.environ.get("BOT_TOKEN")
 DATA_FILE = "users.json"
 
-def fix_arabic(text):
-    return text
+# هاي بس للصورة، مش للنص
+def fix_arabic_img(text):
+    try:
+        return get_display(reshaper.reshape(str(text)))
+    except:
+        return str(text)
 
 def load_users():
     if not os.path.exists(DATA_FILE):
@@ -34,7 +42,6 @@ def add_points(user_id, amount):
         users[uid]["msg_count"] = 0
     users[uid]["points"] += amount
     users[uid]["msg_count"] += 1
-    # كل 10 رسائل = 1 ذهبة
     if users[uid]["msg_count"] >= 10:
         users[uid]["coins"] += 1
         users[uid]["msg_count"] = 0
@@ -54,20 +61,46 @@ def add_coins(user_id, amount):
     save_users(users)
     return users[uid]["coins"]
 
+def make_card(name, points, coins):
+    W, H = 800, 1000
+    img = Image.new("RGB", (W, H), (15, 10, 5))
+    d = ImageDraw.Draw(img)
+    d.rectangle([20, 20, W-20, H-20], outline=(212, 175, 55), width=4)
+    try:
+        font_big = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 55)
+        font_mid = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
+        font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
+    except:
+        font_big = ImageFont.load_default()
+        font_mid = font_big
+        font_small = font_big
+    def center(y, text, font, color=(255, 215, 100)):
+        t = fix_arabic_img(text)
+        bbox = d.textbbox((0, 0), t, font=font)
+        w = bbox[2] - bbox[0]
+        d.text(((W - w) // 2, y), t, font=font, fill=color)
+    center(80, "بطاقتك يا " + name, font_big)
+    center(170, "رصيدك:", font_mid, (200, 200, 200))
+    center(300, f"نقاطك: {points} نقطة", font_mid, (255, 255, 255))
+    center(380, f"ذهبك: {coins} ذهبة", font_mid, (255, 255, 255))
+    bio = io.BytesIO()
+    img.save(bio, format="PNG")
+    bio.seek(0)
+    return bio
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("اهلا فيك ببوت قيصر 👑\nاكتب اي شي واجمع نقاط وذهب!\n/يومي - مكافأة يومية\n/رصيدي - شوف رصيدك\n/ترتيب - ترتيب الأبطال")
+    await update.message.reply_text("اهلا فيك ببوت قيصر 👑\nاكتب اي شي واجمع نقاط وذهب!\n/يومي - مكافأة يومية\n/رصيدي - شوف بطاقتك\n/ترتيب - ترتيب الأبطال")
 
 async def daily(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    coins = add_coins(user.id, 2)
+    coins = add_coins(update.effective_user.id, 2)
     await update.message.reply_text(f"🎁 مكافأتك اليومية: 2 عملة ذهبية\nصار معك: {coins} 🪙")
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     users = load_users()
-    uid = str(user.id)
-    data = users.get(uid, {"points": 0, "coins": 0})
-    await update.message.reply_text(f"👑 رصيدك يا {user.first_name}\n⭐ نقاطك: {data.get('points', 0)}\n🪙 ذهبك: {data.get('coins', 0)}")
+    data = users.get(str(user.id), {"points": 0, "coins": 0})
+    card = make_card(user.first_name, data.get("points", 0), data.get("coins", 0))
+    await update.message.reply_photo(photo=card, caption=f"👑 بطاقتك يا {user.first_name}")
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     users = load_users()
@@ -86,10 +119,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     user = update.effective_user
     lower = text.lower()
-
     if "قيصر" in text or "qaysar" in lower or "qaisar" in lower:
         await update.message.reply_text(random.choice(["هلا بالقيصر 👑", "قيصر موجود 😎", "نعم يا قيصر؟ 👑"]))
         return
-
     if "احبك" in text or "بحبك" in text:
-        await update.message.reply_text(random.choice(["وانا بحبك
+        await update.message.reply_text("وانا بحبك اكتر ❤️")
+        return
+    points, got_coin = add_points(user.id, 1)
+    users = load_users()
+    uid = str(user.id)
+    if uid in users:
+        users[uid]["name"] = user.first_name
+        save_users(users)
+    if got_coin:
+        await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية\nنقاطك: {points}")
+
+def main():
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("يومي", daily))
+    app.add_handler(CommandHandler("رصيدي", balance))
+    app.add_handler(CommandHandler("ترتيب", leaderboard))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    print("Bot is running...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
