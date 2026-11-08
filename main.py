@@ -4,8 +4,8 @@ import random
 import io
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from PIL import Image, ImageDraw, ImageFont
-from arabic_reshaper import reshaper
+fromfrom PIL import Image, ImageDraw, ImageFont
+import arabic_reshaper
 from bidi.algorithm import get_display
 
 TOKEN = os.environ.get("BOT_TOKEN")
@@ -13,8 +13,7 @@ DATA_FILE = "users.json"
 
 # هاي بس للصورة، مش للنص
 def fix_arabic_img(text):
-    try:
-        return get_display(reshaper.reshape(str(text)))
+    try:return get_display(arabic_reshaper.reshape(str(text)))
     except:
         return str(text)
 
