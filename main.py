@@ -136,9 +136,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("يومي", daily))
-    app.add_handler(CommandHandler("رصيدي", balance))
-    app.add_handler(CommandHandler("ترتيب", leaderboard))
+    app.add_handler(CommandHandler("daily", daily))
+    app.add_handler(CommandHandler("balance", balance))
+    app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     print("Bot is running...")
     app.run_polling()
