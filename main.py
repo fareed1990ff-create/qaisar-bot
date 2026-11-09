@@ -77,33 +77,61 @@ def add_coins(user_id, amount):
     save_users(users)
     return users[uid]["coins"]
 
-def make_card(name, points, coins):
-    W, H = 800, 1000
+def make_card(name, points, coins, rank):
+    W, H = 1200, 700
     img = Image.new("RGB", (W, H), (15, 10, 5))
     d = ImageDraw.Draw(img)
-    d.rectangle([20, 20, W-20, H-20], outline=(212, 175, 55), width=4)
+    d.rectangle([20, 20, W-20, H-20], outline=(212, 175, 55), width=5)
+
+    if points < 50:
+        rank_name = "مبتدئ"
+    elif points < 150:
+        rank_name = "محترف"
+    elif points < 300:
+        rank_name = "بطل"
+    else:
+        rank_name = "أسطورة"
+
     try:
         import urllib.request
         if not os.path.exists("Amiri-Regular.ttf"):
             urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Regular.ttf", "Amiri-Regular.ttf")
         font_big = ImageFont.truetype("Amiri-Regular.ttf", 70)
-        font_mid = ImageFont.truetype("Amiri-Regular.ttf", 50)
-        font_small = ImageFont.truetype("Amiri-Regular.ttf", 38)
+        font_mid = ImageFont.truetype("Amiri-Regular.ttf", 45)
     except:
         font_big = ImageFont.load_default()
         font_mid = font_big
-        font_small = font_big
-    def center(y, text, font, color=(255, 215, 100)):
+
+    def center(y, text, font, color=(255, 255, 255)):
         t = fix_arabic_img(text)
         bbox = d.textbbox((0, 0), t, font=font)
         w = bbox[2] - bbox[0]
         d.text(((W - w) // 2, y), t, font=font, fill=color)
-    center(80, "Your Card", font_big)
-    center(150, "Balance", font_mid, (200, 200, 200))
-    center(250, "Points", font_mid)
-    center(310, str(points), font_big)
-    center(420, "Gold", font_mid)
-    center(480, str(coins), font_big)
+
+    def center_at(x_center, y, text, font, color):
+        t = fix_arabic_img(text)
+        bbox = d.textbbox((0, 0), t, font=font)
+        w = bbox[2] - bbox[0]
+        d.text((x_center - w//2, y), t, font=font, fill=color)
+
+    # 1. الاسم فوق
+    center(50, name, font_big, (212, 175, 55))
+    # 2. 3 خانات جنب بعض بالعرض
+    center_at(250, 200, "النقاط", font_mid, (200, 200, 200))
+    center_at(250, 260, str(points), font_big, (212, 175, 55))
+
+    center_at(600, 200, "الرتبة", font_mid, (200, 200, 200))
+    center_at(600, 260, rank_name, font_big, (255, 255, 255))
+
+    center_at(950, 200, "الترتيب", font_mid, (200, 200, 200))
+    center_at(950, 260, f"#{rank}", font_big, (212, 175, 55))
+
+    # 3. الذهب تحت بصندوق عريض - زي المربع الاحمر
+    d.rounded_rectangle([60, 430, W-60, 620], radius=30, fill=(212, 175, 55))
+    d.rounded_rectangle([70, 440, W-70, 610], radius=25, fill=(60, 40, 5))
+    center(460, "العملات الذهبية", font_mid, (212, 175, 55))
+    center(520, str(coins), font_big, (255, 215, 0))
+
     bio = io.BytesIO()
     img.save(bio, format="PNG")
     bio.seek(0)
@@ -113,10 +141,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("اهلا فيك ببوت قيصر 👑\nاكتب اي شي واجمع نقاط وذهب!\nكل 10 رسايل = 1 ذهبة 🪙\n/balance - شوف بطاقتك\n/leaderboard - ترتيب الأبطال")
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
+        user = update.effective_user
     users = load_users()
-    data = users.get(str(user.id), {"points": 0, "coins": 0})
-    card = make_card(user.first_name, data.get("points", 0), data.get("coins", 0))
+    data = users.get(str(user.id), {"points": 0, "coins": 0, "name": user.first_name})
+    points = data.get("points", 0)
+    coins = data.get("coins", 0)
+    sorted_users = sorted(users.items(), key=lambda x: x[1].get("points", 0), reverse=True)
+    rank = 1
+    for uid, udata in sorted_users:
+        if uid == str(user.id):
+            break
+        rank += 1
+    card = make_card(user.first_name, points, coins, rank)
     await update.message.reply_photo(photo=card, caption=f"👑 بطاقتك يا {user.first_name}")
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
