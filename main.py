@@ -83,15 +83,26 @@ def make_card(name, points, coins, rank):
     d = ImageDraw.Draw(img)
     d.rectangle([20, 20, W-20, H-20], outline=(212, 175, 55), width=5)
 
-    if points < 50:
-        rank_name = "مبتدئ"
-    elif points < 150:
-        rank_name = "محترف"
+        if points < 100:
+        rank_name = "عضو جديد"
     elif points < 300:
+        rank_name = "مبتدئ"
+    elif points < 600:
         rank_name = "بطل"
-    else:
+    elif points < 1000:
+        rank_name = "نجم صاعد"
+    elif points < 1600:
+        rank_name = "محارب ذهبي"
+    elif points < 2400:
+        rank_name = "قائد"
+    elif points < 3600:
         rank_name = "أسطورة"
-
+    elif points < 5000:
+        rank_name = "النخبة"
+    elif points < 7000:
+        rank_name = "محلل"
+    else:
+        rank_name = "خبير استراتيجي"
     try:
         import urllib.request
         if not os.path.exists("Amiri-Regular.ttf"):
