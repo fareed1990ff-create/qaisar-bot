@@ -209,7 +209,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     lower = text.lower()
     if "قيصر" in text or "qaysar" in lower or "qaisar" in lower:
-        await update.message.reply_text(random.choice(["هلا بالقيصر 👑", "قيصر موجود 😎", "نعم يا قيصر؟ 👑"]))
+        replies = [
+            "نعم؟ القيصر موجود 👑",
+            "أمرني يا بطل، القيصر هون 🔥",
+            "هلا هلا، ناديتني؟ 😎",
+            "القيصر سامعك، شو بدك؟",
+            "أنا هون، لا تخاف 😂👑",
+            "نعم نعم، القيصر بالخدمة",
+            "شو في؟ حد نادى القيصر؟ 👀",
+            "أهلين بالبطل، شو الأخبار؟",
+            "القيصر موجود، احكي يا معلم",
+            "عيون القيصر، أمرني",
+            "وصلت وصلت، شو القصة؟ 🔥",
+            "نعم يا ملك، القيصر معك",
+            "هلا والله، نورت يا بطل",
+            "القيصر هون، لا حد يزعج البطل",
+            "سمعت اسمي؟ أنا جاهز 👑",
+            "احكي احكي، القيصر سامعك",
+            "يا هلا، القيصر وصل",
+            "أنا القيصر، مين بده خدمة؟ 😎",
+            "نعم؟ بدك نقاط ولا بدك ذهب؟ 💰",
+            "القيصر لا ينام، أنا هون 😂"
+        ]
+        await update.message.reply_text(random.choice(replies))
         return
     if "احبك" in text or "بحبك" in text:
         await update.message.reply_text("وانا بحبك اكتر ❤️")
