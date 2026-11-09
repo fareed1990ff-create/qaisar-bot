@@ -156,7 +156,7 @@ def make_card(name, points, coins, rank):
         percent = int((points - cur_limit) / (next_limit - cur_limit) * 100)
 
     # الشريط - بنفس مكان الأحمر
-    bar_x1, bar_y1, bar_x2, bar_y2 = 250, 350, 950, 385
+    bar_x1, bar_y1, bar_x2, bar_y2 = 250, 350, 950, 412
     d.rounded_rectangle([bar_x1, bar_y1, bar_x2, bar_y2], radius=17, fill=(45, 35, 10), outline=(212, 175, 55), width=3)
     fill_w = int((bar_x2 - bar_x1) * percent / 100)
     if fill_w > 10:
