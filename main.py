@@ -163,10 +163,10 @@ def make_card(name, points, coins, rank):
         d.rounded_rectangle([bar_x1+3, bar_y1+3, bar_x1+fill_w-3, bar_y2-3], radius=14, fill=(212, 175, 55))
     center(315, f"{percent}%  -  {points} / {next_limit}", font_mid, (255, 255, 255))
     # 3. الذهب تحت بصندوق عريض - زي المربع الاحمر
-    d.rounded_rectangle([60, 430, W-60, 620], radius=30, fill=(212, 175, 55))
-    d.rounded_rectangle([70, 440, W-70, 610], radius=25, fill=(60, 40, 5))
-    center(460, "العملات الذهبية", font_mid, (212, 175, 55))
-    center(520, str(coins), font_big, (255, 215, 0))
+    d.rounded_rectangle([300, 440, W-300, 540], radius=30, fill=(212, 175, 55))
+    d.rounded_rectangle([310, 450, W-310, 530], radius=25, fill=(60, 40, 5))
+    center(458, "العملات الذهبية", font_mid, (212, 175, 55))
+    center(498, str(coins), font_big, (255, 215, 0))
 
     bio = io.BytesIO()
     img.save(bio, format="PNG")
