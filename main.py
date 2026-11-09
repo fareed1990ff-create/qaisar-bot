@@ -148,3 +148,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_users(users)
     if got_coin:
         await update.message.reply_text(f"🪙 مبروووك! أخذت
+
+
+def main():
+    keep_alive()
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("balance", balance))
+    app.add_handler(CommandHandler("leaderboard", leaderboard))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    print("Bot is running...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
