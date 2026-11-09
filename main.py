@@ -2,6 +2,8 @@ import os
 import json
 import random
 import io
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from PIL import Image, ImageDraw, ImageFont
@@ -10,6 +12,20 @@ from bidi.algorithm import get_display
 
 TOKEN = os.environ.get("BOT_TOKEN")
 DATA_FILE = "users.json"
+
+# هاي عشان Render المجاني ما يطفي البوت - بيفتح بورت وهمي
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running")
+    def log_message(self, *args):
+        pass
+
+def keep_alive():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
 
 # هاي بس للصورة، مش للنص 
 def fix_arabic_img(text):
@@ -131,16 +147,4 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         users[uid]["name"] = user.first_name
         save_users(users)
     if got_coin:
-        await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية\nنقاطك: {points}")
-
-def main():
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("balance", balance))
-    app.add_handler(CommandHandler("leaderboard", leaderboard))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    print("Bot is running...")
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+        await update.message.reply_text(f"🪙 مبروووك! أخذت
