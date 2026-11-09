@@ -103,13 +103,13 @@ def make_card(name, points, coins, rank):
         font_mid = font_big
 
     def center(y, text, font, color=(255, 255, 255)):
-        t = fix_arabic_img(text)
+        t = str(text)
         bbox = d.textbbox((0, 0), t, font=font)
         w = bbox[2] - bbox[0]
         d.text(((W - w) // 2, y), t, font=font, fill=color)
 
     def center_at(x_center, y, text, font, color):
-        t = fix_arabic_img(text)
+        t = str(text)
         bbox = d.textbbox((0, 0), t, font=font)
         w = bbox[2] - bbox[0]
         d.text((x_center - w//2, y), t, font=font, fill=color)
