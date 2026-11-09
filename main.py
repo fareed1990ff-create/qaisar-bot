@@ -157,11 +157,11 @@ def make_card(name, points, coins, rank):
 
     # الشريط - بنفس مكان الأحمر
     bar_x1, bar_y1, bar_x2, bar_y2 = 250, 350, 950, 385
-    d.rounded_rectangle([bar_x1, bar_y1, bar_x2, bar_y2], radius=17, fill=(0, 0, 0), outline=(212, 175, 55), width=2)
+    d.rounded_rectangle([bar_x1, bar_y1, bar_x2, bar_y2], radius=17, fill=(45, 35, 10), outline=(212, 175, 55), width=3)
     fill_w = int((bar_x2 - bar_x1) * percent / 100)
     if fill_w > 10:
         d.rounded_rectangle([bar_x1+3, bar_y1+3, bar_x1+fill_w-3, bar_y2-3], radius=14, fill=(212, 175, 55))
-    center(315, f"{percent}%  -  {points} / {next_limit}", font_mid, (212, 175, 55))
+    center(315, f"{percent}%  -  {points} / {next_limit}", font_mid, (255, 255, 255))
     # 3. الذهب تحت بصندوق عريض - زي المربع الاحمر
     d.rounded_rectangle([60, 430, W-60, 620], radius=30, fill=(212, 175, 55))
     d.rounded_rectangle([70, 440, W-70, 610], radius=25, fill=(60, 40, 5))
