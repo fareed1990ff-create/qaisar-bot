@@ -136,7 +136,32 @@ def make_card(name, points, coins, rank):
 
     center_at(950, 200, "الترتيب", font_mid, (200, 200, 200))
     center_at(950, 260, f"#{rank}", font_big, (212, 175, 55))
+    # --- عداد الرتبة هون ---
+    limits = [0, 100, 300, 600, 1000, 1600, 2400, 3600, 5000, 7000]
+    # وين انت هسا ووين الرتبة الجاية
+    cur_limit = 0
+    next_limit = 100
+    for i, lim in enumerate(limits):
+        if points >= lim:
+            cur_limit = lim
+            if i + 1 < len(limits):
+                next_limit = limits[i+1]
+            else:
+                next_limit = lim
+        else:
+            break
+    if points >= 7000:
+        percent = 100
+    else:
+        percent = int((points - cur_limit) / (next_limit - cur_limit) * 100)
 
+    # الشريط - بنفس مكان الأحمر
+    bar_x1, bar_y1, bar_x2, bar_y2 = 250, 350, 950, 385
+    d.rounded_rectangle([bar_x1, bar_y1, bar_x2, bar_y2], radius=17, fill=(0, 0, 0), outline=(212, 175, 55), width=2)
+    fill_w = int((bar_x2 - bar_x1) * percent / 100)
+    if fill_w > 10:
+        d.rounded_rectangle([bar_x1+3, bar_y1+3, bar_x1+fill_w-3, bar_y2-3], radius=14, fill=(212, 175, 55))
+    center(315, f"{percent}%  -  {points} / {next_limit}", font_mid, (212, 175, 55))
     # 3. الذهب تحت بصندوق عريض - زي المربع الاحمر
     d.rounded_rectangle([60, 430, W-60, 620], radius=30, fill=(212, 175, 55))
     d.rounded_rectangle([70, 440, W-70, 610], radius=25, fill=(60, 40, 5))
