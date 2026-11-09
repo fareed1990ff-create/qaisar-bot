@@ -129,7 +129,7 @@ def make_card(name, points, coins, rank):
     center(50, name, font_big, (212, 175, 55))
     # 2. 3 خانات جنب بعض بالعرض
     center_at(250, 200, "النقاط", font_mid, (200, 200, 200))
-    center_at(250, 260, str(points), font_big, (212, 175, 55))
+    center_at(250, 260, str(points), font_big, (90, 180, 255))
 
     center_at(600, 200, "الرتبة", font_mid, (200, 200, 200))
     center_at(600, 235, rank_name, font_big, (255, 255, 255))
