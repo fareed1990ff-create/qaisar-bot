@@ -83,7 +83,7 @@ def make_card(name, points, coins, rank):
     d = ImageDraw.Draw(img)
     d.rectangle([20, 20, W-20, H-20], outline=(212, 175, 55), width=5)
 
-        if points < 100:
+    if points < 100:
         rank_name = "عضو جديد"
     elif points < 300:
         rank_name = "مبتدئ"
