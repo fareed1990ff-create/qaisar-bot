@@ -132,7 +132,7 @@ def make_card(name, points, coins, rank):
     center_at(250, 260, str(points), font_big, (90, 180, 255))
 
     center_at(600, 200, "الرتبة", font_mid, (200, 200, 200))
-    center_at(600, 235, rank_name, font_big, (255, 255, 255))
+    center_at(600, 235, rank_name, font_big, (190, 140, 255))
 
     center_at(950, 200, "الترتيب", font_mid, (200, 200, 200))
     center_at(950, 260, f"#{rank}", font_big, (212, 175, 55))
