@@ -141,7 +141,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("اهلا فيك ببوت قيصر 👑\nاكتب اي شي واجمع نقاط وذهب!\nكل 10 رسايل = 1 ذهبة 🪙\n/balance - شوف بطاقتك\n/leaderboard - ترتيب الأبطال")
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        user = update.effective_user
+    user = update.effective_user
     users = load_users()
     data = users.get(str(user.id), {"points": 0, "coins": 0, "name": user.first_name})
     points = data.get("points", 0)
