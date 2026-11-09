@@ -92,11 +92,7 @@ def make_card(name, points, coins):
     return bio
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("اهلا فيك ببوت قيصر 👑\nاكتب اي شي واجمع نقاط وذهب!\n/يومي - مكافأة يومية\n/رصيدي - شوف بطاقتك\n/ترتيب - ترتيب الأبطال")
-
-async def daily(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    coins = add_coins(update.effective_user.id, 2)
-    await update.message.reply_text(f"🎁 مكافأتك اليومية: 2 عملة ذهبية\nصار معك: {coins} 🪙")
+    await update.message.reply_text("اهلا فيك ببوت قيصر 👑\nاكتب اي شي واجمع نقاط وذهب!\nكل 10 رسايل = 1 ذهبة 🪙\n/balance - شوف بطاقتك\n/leaderboard - ترتيب الأبطال")
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -140,7 +136,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("daily", daily))
     app.add_handler(CommandHandler("balance", balance))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
