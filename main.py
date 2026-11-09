@@ -147,9 +147,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         users[uid]["name"] = user.first_name
         save_users(users)
     if got_coin:
-        await update.message.reply_text(f"🪙 مبروووك! أخذت
-
-
+        await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
 def main():
     keep_alive()
     app = Application.builder().token(TOKEN).build()
