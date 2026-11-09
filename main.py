@@ -166,7 +166,7 @@ def make_card(name, points, coins, rank):
     d.rounded_rectangle([300, 510, W-300, 610], radius=30, fill=(212, 175, 55))
     d.rounded_rectangle([310, 520, W-310, 600], radius=25, fill=(60, 40, 5))
     center(528, "العملات الذهبية", font_mid, (212, 175, 55))
-    center(568, str(coins), font_big, (255, 215, 0))
+    center(580, str(coins), font_big, (255, 215, 0))
 
     bio = io.BytesIO()
     img.save(bio, format="PNG")
