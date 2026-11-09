@@ -58,7 +58,7 @@ def add_points(user_id, amount):
         users[uid]["msg_count"] = 0
     users[uid]["points"] += amount
     users[uid]["msg_count"] += 1
-    if users[uid]["msg_count"] >= 10:
+    if users[uid]["msg_count"] >= 50:
         users[uid]["coins"] += 1
         users[uid]["msg_count"] = 0
         save_users(users)
