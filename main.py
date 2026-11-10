@@ -176,17 +176,17 @@ def make_card(name, points, coins, rank):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     keyboard = [
-        [InlineKeyboardButton("💰 رصيدي", callback_data="balance"), InlineKeyboardButton("🏆 ترتيب الأبطال", callback_data="leaderboard")],
-        [InlineKeyboardButton("🪙 عملاتي", callback_data="coins"), InlineKeyboardButton("⭐ رتبتي", callback_data="rank")],
-        [InlineKeyboardButton("📜 القوانين", callback_data="rules")]
+        [InlineKeyboardButton("🪙 العملات الذهبية", callback_data="coins_info"),
+         InlineKeyboardButton("🎮 قريبا", callback_data="soon")],
+        [InlineKeyboardButton("💰 رصيدي", callback_data="balance"),
+         InlineKeyboardButton("🏆 ترتيب الأبطال", callback_data="leaderboard")]
     ]
     markup = InlineKeyboardMarkup(keyboard)
-    caption = f"أهلاً فيك يا {user.first_name} 👑\n\nبوت قيصر - اجمع نقاط واصعد للصدارة 🔥\nاكتب أي رسالة لتجميع النقاط، وكل 50 رسالة بتاخد عملة ذهبية 🪙"
+    caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!"
     try:
-        await update.message.reply_photo(photo="https://raw.githubusercontent.com/fareed1990ff/qaisar-bot/main/banner.jpg", caption=caption, reply_markup=markup)
+        await update.message.reply_photo(photo="https://raw.githubusercontent.com/fareed1990ff/qaisar-bot/main/main.jpg", caption=caption, reply_markup=markup)
     except:
         await update.message.reply_text(caption, reply_markup=markup)
-
 async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
