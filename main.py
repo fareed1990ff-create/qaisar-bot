@@ -370,7 +370,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("balance", balance))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
-        app.add_handler(CommandHandler("طير", kick_user))
+    app.add_handler(CommandHandler("طير", kick_user))
     app.add_handler(CommandHandler("اسكت", mute_user))
     app.add_handler(CommandHandler("احكي", unmute_user))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
