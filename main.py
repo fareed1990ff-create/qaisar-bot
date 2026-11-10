@@ -309,12 +309,70 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_users(users)
     if got_coin:
         await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
+
+    async def is_admin(update, context):
+    try:
+        member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
+        return member.status in ["administrator", "creator"]
+    except:
+        return False
+
+async def kick_user(update, context):
+    if update.effective_chat.type == "private":
+        await update.message.reply_text("❌ هاد الأمر بس بالجروب")
+        return
+    if not await is_admin(update, context):
+        await update.message.reply_text("❌ بس الأدمن بيقدر يطير")
+        return
+    if not update.message.reply_to_message:
+        await update.message.reply_text("❌ رد على رسالة الشخص واكتب /طير")
+        return
+    target = update.message.reply_to_message.from_user
+    try:
+        await context.bot.ban_chat_member(update.effective_chat.id, target.id)
+        await context.bot.unban_chat_member(update.effective_chat.id, target.id)
+        await update.message.reply_text(f"🦅 طاااار {target.first_name} برا الجروب 😂👋")
+    except:
+        await update.message.reply_text("❌ ما قدرت أطيره، تأكد اني أدمن")
+
+async def mute_user(update, context):
+    if update.effective_chat.type == "private":
+        await update.message.reply_text("❌ هاد الأمر بس بالجروب")
+        return
+    if not await is_admin(update, context):
+        await update.message.reply_text("❌ بس الأدمن بيقدر يسكت")
+        return
+    if not update.message.reply_to_message:
+        await update.message.reply_text("❌ رد على رسالة الشخص واكتب /اسكت")
+        return
+    target = update.message.reply_to_message.from_user
+    try:
+        await context.bot.restrict_chat_member(update.effective_chat.id, target.id, permissions=None)
+        await update.message.reply_text(f"🤐 تم كتم {target.first_name}")
+    except:
+        await update.message.reply_text("❌ ما قدرت اسكته، تأكد اني أدمن")
+
+async def unmute_user(update, context):
+    if not await is_admin(update, context):
+        return
+    if not update.message.reply_to_message:
+        return
+    target = update.message.reply_to_message.from_user
+    try:
+        from telegram import ChatPermissions
+        await context.bot.restrict_chat_member(update.effective_chat.id, target.id, permissions=ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True))
+        await update.message.reply_text(f"🔊 تم فك كتم {target.first_name}")
+    except:
+        await update.message.reply_text("❌ ما قدرت افك عنه")
 def main():
     keep_alive()
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("balance", balance))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
+        app.add_handler(CommandHandler("طير", kick_user))
+    app.add_handler(CommandHandler("اسكت", mute_user))
+    app.add_handler(CommandHandler("احكي", unmute_user))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(buttons_handler))
     print("Bot is running...")
