@@ -207,7 +207,7 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_photo(photo="https://raw.githubusercontent.com/fareed1990ff/qaisar-bot/main/ranks.jpg", caption=text)
         except:
             await query.message.reply_text(text)
-    elif query.data == "coins":
+    elif query.data == "coins_info":
         try:
             await query.message.reply_photo(photo="https://raw.githubusercontent.com/fareed1990ff/qaisar-bot/main/coins.jpg", caption=f"معك {coins} عملة ذهبية 🪙\nكل 50 رسالة = 1 عملة")
         except:
