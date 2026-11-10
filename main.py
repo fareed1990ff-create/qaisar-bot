@@ -184,7 +184,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     markup = InlineKeyboardMarkup(keyboard)
     caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!"
     try:
-        await update.message.reply_photo(photo="https://raw.githubusercontent.com/fareed1990ff/qaisar-bot/main/main.jpg", caption=caption, reply_markup=markup)
+        await update.message.reply_photo(photo=open("main.jpg", "rb") , caption=caption, reply_markup=markup)
     except:
         await update.message.reply_text(caption, reply_markup=markup)
 async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
