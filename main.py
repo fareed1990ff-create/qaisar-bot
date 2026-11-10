@@ -4,8 +4,8 @@ import random
 import io
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from PIL import Image, ImageDraw, ImageFont
 import arabic_reshaper
 from bidi.algorithm import get_display
@@ -174,8 +174,48 @@ def make_card(name, points, coins, rank):
     return bio
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("اهلا فيك ببوت قيصر 👑\nاكتب اي شي واجمع نقاط وذهب!\nكل 10 رسايل = 1 ذهبة 🪙\n/balance - شوف بطاقتك\n/leaderboard - ترتيب الأبطال")
+    user = update.effective_user
+    keyboard = [
+        [InlineKeyboardButton("💰 رصيدي", callback_data="balance"), InlineKeyboardButton("🏆 ترتيب الأبطال", callback_data="leaderboard")],
+        [InlineKeyboardButton("🪙 عملاتي", callback_data="coins"), InlineKeyboardButton("⭐ رتبتي", callback_data="rank")],
+        [InlineKeyboardButton("📜 القوانين", callback_data="rules")]
+    ]
+    markup = InlineKeyboardMarkup(keyboard)
+    caption = f"أهلاً فيك يا {user.first_name} 👑\n\nبوت قيصر - اجمع نقاط واصعد للصدارة 🔥\nاكتب أي رسالة لتجميع النقاط، وكل 50 رسالة بتاخد عملة ذهبية 🪙"
+    try:
+        await update.message.reply_photo(photo="https://raw.githubusercontent.com/fareed1990ff/qaisar-bot/main/banner.jpg", caption=caption, reply_markup=markup)
+    except:
+        await update.message.reply_text(caption, reply_markup=markup)
 
+async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    user = query.from_user
+    users = load_users()
+    data = users.get(str(user.id), {"points": 0, "coins": 0})
+    points = data.get("points", 0)
+    coins = data.get("coins", 0)
+    if query.data == "balance":
+        card = make_card(user.first_name, points, coins, 1)
+        await query.message.reply_photo(photo=card, caption=f"رصيدك: {points} نقطة | {coins} عملة 🪙")
+    elif query.data == "leaderboard":
+        sorted_users = sorted(users.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:10]
+        text = "🏆 ترتيب الأبطال:\n\n"
+        for i, (uid, udata) in enumerate(sorted_users, 1):
+            text += f"{i}. {udata.get('name', 'بطل')} - {udata.get('points', 0)} نقطة\n"
+        try:
+            await query.message.reply_photo(photo="https://raw.githubusercontent.com/fareed1990ff/qaisar-bot/main/ranks.jpg", caption=text)
+        except:
+            await query.message.reply_text(text)
+    elif query.data == "coins":
+        try:
+            await query.message.reply_photo(photo="https://raw.githubusercontent.com/fareed1990ff/qaisar-bot/main/coins.jpg", caption=f"معك {coins} عملة ذهبية 🪙\nكل 50 رسالة = 1 عملة")
+        except:
+            await query.message.reply_text(f"معك {coins} عملة ذهبية 🪙")
+    elif query.data == "rank":
+        await query.message.reply_text(f"نقاطك: {points} 🔥\nاستمر عشان تصعد للرتبة الأعلى!")
+    elif query.data == "rules":
+        await query.message.reply_text("📜 القوانين:\n1. كل رسالة = نقطة\n2. كل 50 رسالة = 1 عملة ذهبية\n3. ممنوع السب والشتم\n4. استمتع واصعد للصدارة 👑")
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     users = load_users()
@@ -268,6 +308,7 @@ def main():
     app.add_handler(CommandHandler("balance", balance))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(CallbackQueryHandler(buttons_handler))
     print("Bot is running...")
     app.run_polling()
 
