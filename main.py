@@ -311,10 +311,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
 
     async def is_admin(update, context):
-    try:
+     try:
         member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
         return member.status in ["administrator", "creator"]
-    except:
+     except:
         return False
 
 async def kick_user(update, context):
