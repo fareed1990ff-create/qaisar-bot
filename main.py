@@ -6,7 +6,7 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 import arabic_reshaper
 from bidi.algorithm import get_display
 
@@ -183,8 +183,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     markup = InlineKeyboardMarkup(keyboard)
     caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!"
+            img = Image.open("main.jpg")
+    img = ImageOps.fit(img, (1080, 1350), Image.LANCZOS)
+    bio = io.BytesIO()
+    img.save(bio, format="JPEG")
+    bio.seek(0)
     try:
-        await update.message.reply_photo(photo=open("main.jpg", "rb") , caption=caption, reply_markup=markup)
+        await update.message.reply_photo(photo=bio, caption=caption, reply_markup=markup)
     except:
         await update.message.reply_text(caption, reply_markup=markup)
 async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
