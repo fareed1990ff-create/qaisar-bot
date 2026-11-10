@@ -313,7 +313,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async def is_admin(update, context):
      try:
         member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
-        return member.status in ["administrator", من "creator"]
+        return member.status in ["administrator", "creator"]
      except:
         return False
 
