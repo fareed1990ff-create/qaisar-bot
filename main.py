@@ -274,7 +274,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(random.choice(replies))
         return
         if "احبك" in text or "بحبك" in text or "اعشقك" in text or "بموت فيك" in text:
-        replies_love = [
+            replies_love = [
             "وأنا بموت فيك يا قلبي ❤️",
             "القيصر كمان بيحبك، يا روحي 😍",
             "قلبي داب خلص، شو هالحب هاد؟ ❤️",
