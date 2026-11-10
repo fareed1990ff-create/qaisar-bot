@@ -216,7 +216,7 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(f"نقاطك: {points} 🔥\nاستمر عشان تصعد للرتبة الأعلى!")
     elif query.data == "rules":
        await query.message.reply_text("📜 القوانين:\n1. كل رسالة = نقطة\n2. كل 50 رسالة = 1 عملة ذهبية\n3. ممنوع السب والشتم\n4. استمتع واصعد للصدارة 👑")
-        elif query.data == "soon":
+    elif query.data == "soon":
         await query.message.reply_text("🎮 قريبا... استنونا 🔥")
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
