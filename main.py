@@ -183,7 +183,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     markup = InlineKeyboardMarkup(keyboard)
     caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!"
-            img = Image.open("main.jpg")
+    img = Image.open("main.jpg")
     img = ImageOps.fit(img, (1080, 1350), Image.LANCZOS)
     bio = io.BytesIO()
     img.save(bio, format="JPEG")
