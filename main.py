@@ -35,74 +35,66 @@ def fix_arabic_img(text):
         reshaped = arabic_reshaper.reshape(str(text))
         return get_display(reshaped)
     except:
-        return str(text)
-_LOCK = threading.Lock()
-_CACHE = {"data": {}, "time": 0}
-def load_users():
-    global _CACHE
-    import time
-    # اذا البيانات محملة من أقل من 10 ثواني، ارجعها من الذاكرة
-    if time.time() - _CACHE["time"] < 10 and _CACHE["data"]:
-        return dict(_CACHE["data"])
+        return str(text)_LOCK = threading.Lock()
+USERS = {}
+
+def load_users_once():
+    global USERS
     try:
         req = urllib.request.Request(
             f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}/latest",
             headers={"X-Master-Key": JSONBIN_KEY, "Cache-Control": "no-cache"}
         )
-        with urllib.request.urlopen(req) as r:
-            data = json.loads(r.read())
-            rec = data.get("record", {})
-            _CACHE = {"data": dict(rec), "time": time.time()}
-            return rec
-    except:
-        # اذا فشل التحميل، ارجع آخر نسخة محفوظة، مش قاموس فاضي
-        return dict(_CACHE["data"])
+        with urllib.request.urlopen(req, timeout=10) as r:
+            rec = json.loads(r.read()).get("record", {})
+            USERS = copy.deepcopy(rec) if isinstance(rec, dict) else {}
+    except Exception as e:
+        print(f"Load error: {e}")
+        USERS = {}
 
-def save_users(users):
-    global _CACHE
-    import time
+def save_users():
     try:
-        data = json.dumps(users).encode()
+        data = json.dumps(USERS).encode()
         req = urllib.request.Request(
             f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}",
-            data=data,
-            method="PUT",
+            data=data, method="PUT",
             headers={"Content-Type": "application/json", "X-Master-Key": JSONBIN_KEY}
         )
-        urllib.request.urlopen(req)
-        _CACHE = {"data": dict(users), "time": time.time()}
+        with urllib.request.urlopen(req, timeout=10) as r:
+            r.read()
     except Exception as e:
         print(f"Save error: {e}")
+
 def add_points(user_id, amount):
     with _LOCK:
-        users = load_users()
         uid = str(user_id)
-        if uid not in users:
-            users[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
-        if "coins" not in users[uid]:
-            users[uid]["coins"] = 0
-        if "msg_count" not in users[uid]:
-            users[uid]["msg_count"] = 0
-        users[uid]["points"] += amount
-        users[uid]["msg_count"] += 1
-        if users[uid]["msg_count"] >= 50:
-            users[uid]["coins"] += 1
-            users[uid]["msg_count"] = 0
-            save_users(users)
-            return users[uid]["points"], True
-        save_users(users)
-        return users[uid]["points"], False
+        if uid not in USERS:
+            USERS[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
+        u = USERS[uid]
+        u.setdefault("coins", 0)
+        u.setdefault("msg_count", 0)
+        u["points"] += amount
+        u["msg_count"] += 1
+        got_coin = False
+        if u["msg_count"] >= 50:
+            u["coins"] += 1
+            u["msg_count"] = 0
+            got_coin = True
+        save_users()
+        return u["points"], got_coin
 
 def add_coins(user_id, amount):
-    users = load_users()
-    uid = str(user_id)
-    if uid not in users:
-        users[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
-    if "coins" not in users[uid]:
-        users[uid]["coins"] = 0
-    users[uid]["coins"] += amount
-    save_users(users)
-    return users[uid]["coins"]
+    with _LOCK:
+        uid = str(user_id)
+        if uid not in USERS:
+            USERS[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
+        USERS[uid].setdefault("coins", 0)
+        USERS[uid]["coins"] += amount
+        save_users()
+        return USERS[uid]["coins"]
+
+def get_user(user_id):
+    return USERS.get(str(user_id), {"points": 0, "coins": 0, "name": ""})
 
 def make_card(name, points, coins, rank):
     W, H = 1200, 700
@@ -284,6 +276,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     lower = text.lower()
     points, got_coin = add_points(user.id, 1)
+        USERS[str(user.id)]["name"] = user.first_name
+    if got_coin:
+        await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
     if "قيصر" in text or "qaysar" in lower or "qaisar" in lower:
         replies = [
             "نعم؟ القيصر موجود 👑",
