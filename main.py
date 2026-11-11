@@ -397,7 +397,7 @@ async def unmute_user(update, context):
 def main():
     keep_alive()
     global USERS
-        load_users_once()
+    load_users_once()
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.Regex("^رصيد$"), balance))
