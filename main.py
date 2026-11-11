@@ -315,11 +315,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         await update.message.reply_text(random.choice(replies_love))
         return
-    users = load_users()
     uid = str(user.id)
     if uid in users:
         users[uid]["name"] = user.first_name
-        save_users(users)
     if got_coin:
         await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
 
