@@ -39,9 +39,10 @@ def fix_arabic_img(text):
         return str(text)
 _LOCK = threading.Lock()
 USERS = {}
+_LOADED_OK = False
 
 def load_users_once():
-    global USERS
+    global USERS, _LOADED_OK
     try:
         req = urllib.request.Request(
             f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}/latest",
@@ -49,12 +50,23 @@ def load_users_once():
         )
         with urllib.request.urlopen(req, timeout=10) as r:
             rec = json.loads(r.read()).get("record", {})
+            if rec == {"test": 1}:
+                rec = {}
             USERS = copy.deepcopy(rec) if isinstance(rec, dict) else {}
+            USERS.pop("test", None)
+            _LOADED_OK = True
+            print(f"Loaded {len(USERS)} users from JSONBin")
     except Exception as e:
         print(f"Load error: {e}")
-        USERS = {}
+        _LOADED_OK = False
 
 def save_users():
+    if not _LOADED_OK:
+        print("Skip save - not loaded yet")
+        return
+    if not USERS:
+        print("Skip save - USERS empty, protecting data")
+        return
     try:
         data = json.dumps(USERS).encode()
         req = urllib.request.Request(
