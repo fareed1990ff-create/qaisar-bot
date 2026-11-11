@@ -242,7 +242,6 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     points, got_coin = add_points(user.id, 1)
     users = load_users()
     data = users.get(str(user.id), {"points": 0, "coins": 0, "name": user.first_name})
-    points = data.get("points", 0)
     coins = data.get("coins", 0)
     sorted_users = sorted(users.items(), key=lambda x: x[1].get("points", 0), reverse=True)
     rank = 1
