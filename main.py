@@ -36,19 +36,30 @@ def fix_arabic_img(text):
         return get_display(reshaped)
     except:
         return str(text)
+_CACHE = {"data": {}, "time": 0}
 def load_users():
+    global _CACHE
+    import time
+    # اذا البيانات محملة من أقل من 10 ثواني، ارجعها من الذاكرة
+    if time.time() - _CACHE["time"] < 10 and _CACHE["data"]:
+        return dict(_CACHE["data"])
     try:
         req = urllib.request.Request(
             f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}/latest",
-            headers={"X-Master-Key": JSONBIN_KEY}
+            headers={"X-Master-Key": JSONBIN_KEY, "Cache-Control": "no-cache"}
         )
         with urllib.request.urlopen(req) as r:
             data = json.loads(r.read())
-            return data.get("record", {})
+            rec = data.get("record", {})
+            _CACHE = {"data": dict(rec), "time": time.time()}
+            return rec
     except:
-        return {}
+        # اذا فشل التحميل، ارجع آخر نسخة محفوظة، مش قاموس فاضي
+        return dict(_CACHE["data"])
 
 def save_users(users):
+    global _CACHE
+    import time
     try:
         data = json.dumps(users).encode()
         req = urllib.request.Request(
@@ -58,6 +69,7 @@ def save_users(users):
             headers={"Content-Type": "application/json", "X-Master-Key": JSONBIN_KEY}
         )
         urllib.request.urlopen(req)
+        _CACHE = {"data": dict(users), "time": time.time()}
     except Exception as e:
         print(f"Save error: {e}")
 def add_points(user_id, amount):
