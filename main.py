@@ -36,6 +36,7 @@ def fix_arabic_img(text):
         return get_display(reshaped)
     except:
         return str(text)
+_LOCK = threading.Lock()
 _CACHE = {"data": {}, "time": 0}
 def load_users():
     global _CACHE
@@ -73,23 +74,24 @@ def save_users(users):
     except Exception as e:
         print(f"Save error: {e}")
 def add_points(user_id, amount):
-    users = load_users()
-    uid = str(user_id)
-    if uid not in users:
-        users[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
-    if "coins" not in users[uid]:
-        users[uid]["coins"] = 0
-    if "msg_count" not in users[uid]:
-        users[uid]["msg_count"] = 0
-    users[uid]["points"] += amount
-    users[uid]["msg_count"] += 1
-    if users[uid]["msg_count"] >= 50:
-        users[uid]["coins"] += 1
-        users[uid]["msg_count"] = 0
+    with _LOCK:
+        users = load_users()
+        uid = str(user_id)
+        if uid not in users:
+            users[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
+        if "coins" not in users[uid]:
+            users[uid]["coins"] = 0
+        if "msg_count" not in users[uid]:
+            users[uid]["msg_count"] = 0
+        users[uid]["points"] += amount
+        users[uid]["msg_count"] += 1
+        if users[uid]["msg_count"] >= 50:
+            users[uid]["coins"] += 1
+            users[uid]["msg_count"] = 0
+            save_users(users)
+            return users[uid]["points"], True
         save_users(users)
-        return users[uid]["points"], True
-    save_users(users)
-    return users[uid]["points"], False
+        return users[uid]["points"], False
 
 def add_coins(user_id, amount):
     users = load_users()
