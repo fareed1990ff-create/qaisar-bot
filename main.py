@@ -276,7 +276,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     lower = text.lower()
     points, got_coin = add_points(user.id, 1)
-        USERS[str(user.id)]["name"] = user.first_name
+    USERS[str(user.id)]["name"] = user.first_name
     if got_coin:
         await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
     if "قيصر" in text or "qaysar" in lower or "qaisar" in lower:
