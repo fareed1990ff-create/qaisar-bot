@@ -239,6 +239,7 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     user = update.effective_user
+    points, got_coin = add_points(user.id, 1)
     users = load_users()
     data = users.get(str(user.id), {"points": 0, "coins": 0, "name": user.first_name})
     points = data.get("points", 0)
