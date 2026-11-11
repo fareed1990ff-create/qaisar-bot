@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import copy
 import io
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -246,10 +247,10 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     user = update.effective_user
     points, got_coin = add_points(user.id, 1)
-    users = load_users()
-    data = users.get(str(user.id), {"points": 0, "coins": 0, "name": user.first_name})
+    USERS[str(user.id)]["name"] = user.first_name
+    data = USERS.get(str(user.id), {"points": 0, "coins": 0, "name": user.first_name})
     coins = data.get("coins", 0)
-    sorted_users = sorted(users.items(), key=lambda x: x[1].get("points", 0), reverse=True)
+    sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)
     rank = 1
     for uid, udata in sorted_users:
         if uid == str(user.id):
@@ -259,8 +260,7 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_photo(photo=card, caption=f"👑 بطاقتك يا {user.first_name}")
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    users = load_users()
-    sorted_users = sorted(users.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:10]
+    sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:10]
     text = "🏆 ترتيب الأبطال:\n\n"
     for i, (uid, data) in enumerate(sorted_users, 1):
         name = data.get("name", "لاعب") or "لاعب"
@@ -400,6 +400,7 @@ def main():
     load_users_once()
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.Regex(r"^ترتيب$"), leaderboard))
     app.add_handler(MessageHandler(filters.Regex("^رصيد$"), balance))
     app.add_handler(MessageHandler(filters.Regex(r"^طير$"), kick_user))
     app.add_handler(MessageHandler(filters.Regex(r"^اسكت$"), mute_user))
