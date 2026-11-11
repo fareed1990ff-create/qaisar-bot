@@ -269,6 +269,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     user = update.effective_user
     lower = text.lower()
+    points, got_coin = add_points(user.id, 1)
     if "قيصر" in text or "qaysar" in lower or "qaisar" in lower:
         replies = [
             "نعم؟ القيصر موجود 👑",
@@ -314,7 +315,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         await update.message.reply_text(random.choice(replies_love))
         return
-    points, got_coin = add_points(user.id, 1)
     users = load_users()
     uid = str(user.id)
     if uid in users:
