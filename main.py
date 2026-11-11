@@ -11,7 +11,9 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 
 TOKEN = os.environ.get("BOT_TOKEN")
-DATA_FILE = "users.json"
+import urllib.request
+JSONBIN_ID = os.environ.get("JSONBIN_ID")
+JSONBIN_KEY = os.environ.get("JSONBIN_KEY")
 
 # هاي عشان Render المجاني ما يطفي البوت - بيفتح بورت وهمي
 class Handler(BaseHTTPRequestHandler):
@@ -35,18 +37,29 @@ def fix_arabic_img(text):
     except:
         return str(text)
 def load_users():
-    if not os.path.exists(DATA_FILE):
-        return {}
     try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+        req = urllib.request.Request(
+            f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}/latest",
+            headers={"X-Master-Key": JSONBIN_KEY}
+        )
+        with urllib.request.urlopen(req) as r:
+            data = json.loads(r.read())
+            return data.get("record", {})
     except:
         return {}
 
 def save_users(users):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f, ensure_ascii=False, indent=2)
-
+    try:
+        data = json.dumps(users).encode()
+        req = urllib.request.Request(
+            f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}",
+            data=data,
+            method="PUT",
+            headers={"Content-Type": "application/json", "X-Master-Key": JSONBIN_KEY}
+        )
+        urllib.request.urlopen(req)
+    except Exception as e:
+        print(f"Save error: {e}")
 def add_points(user_id, amount):
     users = load_users()
     uid = str(user_id)
