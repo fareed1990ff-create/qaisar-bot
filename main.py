@@ -35,7 +35,8 @@ def fix_arabic_img(text):
         reshaped = arabic_reshaper.reshape(str(text))
         return get_display(reshaped)
     except:
-        return str(text)_LOCK = threading.Lock()
+        return str(text)
+_LOCK = threading.Lock()
 USERS = {}
 
 def load_users_once():
