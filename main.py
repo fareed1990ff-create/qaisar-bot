@@ -15,7 +15,7 @@ TOKEN = os.environ.get("BOT_TOKEN")
 import urllib.request
 JSONBIN_ID = (os.environ.get("JSONBIN_ID") or "").strip().strip('"').strip("'")
 JSONBIN_KEY = (os.environ.get("JSONBIN_KEY") or "").strip().strip('"').strip("'")
-print(f"DEBUG ID len={len(JSONBIN_ID)} KEY len={len(JSONBIN_KEY)} KEY starts={JSONBIN_KEY[:4]}")
+print(f"DEBUG ID={JSONBIN_ID} KEY={JSONBIN_KEY}")
 
 # هاي عشان Render المجاني ما يطفي البوت - بيفتح بورت وهمي
 class Handler(BaseHTTPRequestHandler):
