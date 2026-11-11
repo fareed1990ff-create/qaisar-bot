@@ -359,17 +359,27 @@ async def mute_user(update, context):
     except Exception as e:
         await update.message.reply_text(f"❌ ما قدرت اكتمه، تأكد اني أدمن: {e}")
 async def unmute_user(update, context):
-    if not await is_admin(update, context):
-        return
     if not update.message.reply_to_message:
+        await update.message.reply_text("رد على رسالة الشخص اللي بدك تفك عنه")
         return
+
+    try:
+        member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
+    except Exception as e:
+        await update.message.reply_text(f"خطأ بفحص المشرف: {e}")
+        return
+
+    if member.status not in ["administrator", "creator"]:
+        await update.message.reply_text("انت مش مشرف عندي")
+        return
+
     target = update.message.reply_to_message.from_user
     try:
         from telegram import ChatPermissions
-        await context.bot.restrict_chat_member(update.effective_chat.id, target.id, permissions=ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True))
+        await context.bot.restrict_chat_member(update.effective_chat.id, target.id, ChatPermissions(can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True))
         await update.message.reply_text(f"🔊 تم فك كتم {target.first_name}")
-    except:
-        await update.message.reply_text("❌ ما قدرت افك عنه")
+    except Exception as e:
+        await update.message.reply_text(f"❌ ما قدرت افك عنه: {e}")
 def main():
     keep_alive()
     app = Application.builder().token(TOKEN).build()
