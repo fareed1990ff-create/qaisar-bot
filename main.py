@@ -215,15 +215,14 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     user = query.from_user
-    users = load_users()
-    data = users.get(str(user.id), {"points": 0, "coins": 0})
+    data = USERS.get(str(user.id), {"points": 0, "coins": 0})
     points = data.get("points", 0)
     coins = data.get("coins", 0)
     if query.data == "balance":
         card = make_card(user.first_name, points, coins, 1)
         await query.message.reply_photo(photo=card, caption=f"رصيدك: {points} نقطة | {coins} عملة 🪙")
     elif query.data == "leaderboard":
-        sorted_users = sorted(users.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:10]
+        sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:10]
         text = "🏆 ترتيب الأبطال:\n\n"
         for i, (uid, udata) in enumerate(sorted_users, 1):
             text += f"{i}. {udata.get('name', 'بطل')} - {udata.get('points', 0)} نقطة\n"
@@ -324,12 +323,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         await update.message.reply_text(random.choice(replies_love))
         return
-    uid = str(user.id)
-    if uid in users:
-        users[uid]["name"] = user.first_name
-    if got_coin:
-        await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
-
     async def is_admin(update, context):
      try:
         member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
@@ -402,6 +395,8 @@ async def unmute_user(update, context):
         await update.message.reply_text(f"❌ ما قدرت افك عنه: {e}")
 def main():
     keep_alive()
+    global USERS
+    USERS = load_users()
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.Regex("^رصيد$"), balance))
