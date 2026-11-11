@@ -383,9 +383,7 @@ async def unmute_user(update, context):
 def main():
     keep_alive()
     app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("balance", balance))
-    app.add_handler(CommandHandler("leaderboard", leaderboard))
+    app.add_handler(CommandHandler("start", start))app.add_handler(MessageHandler(filters.Regex("^رصيد$"), balance))
     app.add_handler(MessageHandler(filters.Regex(r"^طير$"), kick_user))
     app.add_handler(MessageHandler(filters.Regex(r"^اسكت$"), mute_user))
     app.add_handler(MessageHandler(filters.Regex(r"^احكي$"), unmute_user))
