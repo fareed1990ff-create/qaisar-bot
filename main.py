@@ -343,7 +343,6 @@ async def mute_user(update, context):
     # تشخيص - عشان نشوف حالتك
     try:
         member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
-        await update.message.reply_text(f"حالتك عندي: {member.status} - رقمك: {update.effective_user.id}")
     except Exception as e:
         await update.message.reply_text(f"خطأ بفحص المشرف: {e}")
         return
