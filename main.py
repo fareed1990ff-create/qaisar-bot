@@ -365,7 +365,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "حبك لحاله بيكفي يخليني أطير 😍",
             "وأنا بموت فيك، لا تتركني ❤️"
         ]
-      await update.message.reply_text(random.choice(replies_love))
+        await update.message.reply_text(random.choice(replies_love))
         return
     if "قيصر" in text or "qaysar" in lower or "qaisar" in lower:
         replies = [
