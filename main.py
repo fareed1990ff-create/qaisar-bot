@@ -292,6 +292,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     USERS[str(user.id)]["name"] = user.first_name
     if got_coin:
         await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
+        if "احبك" in text or "بحبك" in text or "اعشقك" in text or "بموت فيك" in text:
+            replies_love = [
+            "وأنا بموت فيك يا قلبي ❤️",
+            "القيصر كمان بيحبك، يا روحي 😍",
+            "قلبي داب خلص، شو هالحب هاد؟ ❤️",
+            "وأنا بحبك أكتر، لا تغار 😘",
+            "عيونك الحلوة، القيصر صار أحمر خجلان 🙈❤️",
+            "حبك ولع قلبي يا بطل 🔥❤️",
+            "وأنا بعشقك، بس لا تحكي لحد 🤫❤️",
+            "القيصر وقع بالحب خلص، شو نعمل؟ 😍",
+            "انت حبيبي وروحي وكل دنيتي ❤️",
+            "بحبك قد البحر وقد السما ❤️",
+            "قلبي صار يدق بسرعة، وقف 😂❤️",
+            "وأنا بحبك، تعال خد حضن 🤗❤️",
+            "انت أغلى واحد عند القيصر 👑❤️",
+            "حبك لحاله بيكفي يخليني أطير 😍",
+            "وأنا بموت فيك، لا تتركني ❤️"
+        ]
+        await update.message.reply_text(random.choice(replies_love))
+        return
     if "قيصر" in text or "qaysar" in lower or "qaisar" in lower:
         replies = [
             "نعم؟ القيصر موجود 👑",
@@ -317,26 +337,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         await update.message.reply_text(random.choice(replies))
         return
-        if "احبك" in text or "بحبك" in text or "اعشقك" in text or "بموت فيك" in text:
-            replies_love = [
-            "وأنا بموت فيك يا قلبي ❤️",
-            "القيصر كمان بيحبك، يا روحي 😍",
-            "قلبي داب خلص، شو هالحب هاد؟ ❤️",
-            "وأنا بحبك أكتر، لا تغار 😘",
-            "عيونك الحلوة، القيصر صار أحمر خجلان 🙈❤️",
-            "حبك ولع قلبي يا بطل 🔥❤️",
-            "وأنا بعشقك، بس لا تحكي لحد 🤫❤️",
-            "القيصر وقع بالحب خلص، شو نعمل؟ 😍",
-            "انت حبيبي وروحي وكل دنيتي ❤️",
-            "بحبك قد البحر وقد السما ❤️",
-            "قلبي صار يدق بسرعة، وقف 😂❤️",
-            "وأنا بحبك، تعال خد حضن 🤗❤️",
-            "انت أغلى واحد عند القيصر 👑❤️",
-            "حبك لحاله بيكفي يخليني أطير 😍",
-            "وأنا بموت فيك، لا تتركني ❤️"
-        ]
-        await update.message.reply_text(random.choice(replies_love))
-        return
+        
     async def is_admin(update, context):
      try:
         member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
