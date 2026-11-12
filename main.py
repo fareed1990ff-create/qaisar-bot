@@ -79,7 +79,56 @@ def save_users():
             r.read()
     except Exception as e:
         print(f"Save error: {e}")
+def get_rank_name(points):
+    if points < 100:
+        return "عضو جديد"
+    elif points < 300:
+        return "مبتدئ"
+    elif points < 600:
+        return "بطل"
+    elif points < 1000:
+        return "نجم صاعد"
+    elif points < 1600:
+        return "محارب ذهبي"
+    elif points < 2400:
+        return "قائد"
+    elif points < 3600:
+        return "أسطورة"
+    elif points < 5000:
+        return "النخبة"
+    elif points < 7000:
+        return "محلل"
+    else:
+        return "خبير استراتيجي"
 
+def get_real_rank(user_id):
+    sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)
+    for i, (uid, udata) in enumerate(sorted_users, 1):
+        if uid == str(user_id):
+            return i
+    return len(sorted_users) + 1
+
+async def update_user_tag(context, chat_id, user_id, rank_name):
+    try:
+        await context.bot.set_chat_member_tag(
+            chat_id=chat_id,
+            user_id=user_id,
+            tag=rank_name
+        )
+        return True
+    except Exception as e:
+        print(f"Tag failed: {e}")
+        try:
+            import urllib.request, json
+            url = f"https://api.telegram.org/bot{TOKEN}/setChatMemberTag"
+            data = json.dumps({"chat_id": chat_id, "user_id": user_id, "tag": rank_name}).encode()
+            req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=10) as r:
+                print(r.read())
+                return True
+        except Exception as e2:
+            print(f"Tag direct failed: {e2}")
+            return False
 def add_points(user_id, amount):
     with _LOCK:
         uid = str(user_id)
@@ -88,15 +137,18 @@ def add_points(user_id, amount):
         u = USERS[uid]
         u.setdefault("coins", 0)
         u.setdefault("msg_count", 0)
+        old_rank = get_rank_name(u["points"])
         u["points"] += amount
         u["msg_count"] += 1
+        new_rank = get_rank_name(u["points"])
+        rank_up = new_rank != old_rank
         got_coin = False
         if u["msg_count"] >= 50:
             u["coins"] += 1
             u["msg_count"] = 0
             got_coin = True
         save_users()
-        return u["points"], got_coin
+        return u["points"], got_coin, rank_up, new_rank
 
 def add_coins(user_id, amount):
     with _LOCK:
@@ -234,7 +286,8 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     points = data.get("points", 0)
     coins = data.get("coins", 0)
     if query.data == "balance":
-        card = make_card(user.first_name, points, coins, 1)
+        real_rank = get_real_rank(user.id)
+        card = make_card(user.first_name, points, coins, real_rank)
         await query.message.reply_photo(photo=card, caption=f"رصيدك: {points} نقطة | {coins} عملة 🪙")
     elif query.data == "leaderboard":
         sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:10]
