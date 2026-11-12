@@ -13,10 +13,9 @@ from bidi.algorithm import get_display
 
 TOKEN = os.environ.get("BOT_TOKEN")
 import urllib.request
-JSONBIN_ID = (os.environ.get("JSONBIN_ID") or "").strip().strip('"').strip("'")
-JSONBIN_KEY = (os.environ.get("JSONBIN_KEY") or "").strip().strip('"').strip("'")
-print(f"DEBUG ID={JSONBIN_ID} KEY={JSONBIN_KEY}")
-
+SUPABASE_URL = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
+SUPABASE_KEY = (os.environ.get("SUPABASE_KEY") or "").strip()
+print(f"DEBUG SUPABASE_URL={SUPABASE_URL[:30]} KEY_LEN={len(SUPABASE_KEY)}")
 # هاي عشان Render المجاني ما يطفي البوت - بيفتح بورت وهمي
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -41,24 +40,39 @@ def fix_arabic_img(text):
 _LOCK = threading.Lock()
 USERS = {}
 _LOADED_OK = False
+def supabase_req(path, method="GET", data=None):
+    url = f"{SUPABASE_URL}/rest/v1/{path}"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+    }
+    body = json.dumps(data).encode() if data is not None else None
+    req = urllib.request.Request(url, data=body, method=method, headers=headers)
+    with urllib.request.urlopen(req, timeout=10) as r:
+        txt = r.read().decode()
+        return json.loads(txt) if txt else []
 
 def load_users_once():
     global USERS, _LOADED_OK
     try:
-        req = urllib.request.Request(
-            f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}/latest",
-            headers={"X-Master-Key": JSONBIN_KEY, "Cache-Control": "no-cache"}
-        )
-        with urllib.request.urlopen(req, timeout=10) as r:
-            rec = json.loads(r.read()).get("record", {})
-            if rec == {"test": 1}:
-                rec = {}
-            USERS = copy.deepcopy(rec) if isinstance(rec, dict) else {}
-            USERS.pop("test", None)
-            _LOADED_OK = True
-            print(f"Loaded {len(USERS)} users from JSONBin")
+        rows = supabase_req("users?select=*")
+        USERS = {}
+        for row in rows:
+            uid = str(row.get("user_id"))
+            USERS[uid] = {
+                "points": row.get("points", 0) or 0,
+                "name": row.get("name", "") or "",
+                "coins": row.get("coins", 0) or 0,
+                "msg_count": row.get("msg_count", 0) or 0,
+            }
+        _LOADED_OK = True
+        print(f"Loaded {len(USERS)} users from Supabase")
     except Exception as e:
-        print(f"Load error: {e}")
+        print(f"Load error Supabase: {e}")
+        _LOADED_OK = False
+
         _LOADED_OK = False
 
 def save_users():
@@ -66,19 +80,21 @@ def save_users():
         print("Skip save - not loaded yet")
         return
     if not USERS:
-        print("Skip save - USERS empty, protecting data")
+        print("Skip save - USERS empty")
         return
     try:
-        data = json.dumps(USERS).encode()
-        req = urllib.request.Request(
-            f"https://api.jsonbin.io/v3/b/{JSONBIN_ID}",
-            data=data, method="PUT",
-            headers={"Content-Type": "application/json", "X-Master-Key": JSONBIN_KEY}
-        )
-        with urllib.request.urlopen(req, timeout=10) as r:
-            r.read()
+        for uid, u in USERS.items():
+            data = {
+                "user_id": uid,
+                "points": u.get("points", 0),
+                "name": u.get("name", ""),
+                "coins": u.get("coins", 0),
+                "msg_count": u.get("msg_count", 0),
+            }
+            supabase_req("users?on_conflict=user_id", method="POST", data=data)
+        print(f"Saved {len(USERS)} users to Supabase")
     except Exception as e:
-        print(f"Save error: {e}")
+        print(f"Save error Supabase: {e}")
 def get_rank_name(points):
     if points < 100:
         return "عضو جديد"
