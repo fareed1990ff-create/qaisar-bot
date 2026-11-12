@@ -341,7 +341,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     user = update.effective_user
     lower = text.lower()
-    points, got_coin = add_points(user.id, 1)
+    points, got_coin, rank_up, new_rank = add_points(user.id, 1)
     USERS[str(user.id)]["name"] = user.first_name
     if got_coin:
         await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
