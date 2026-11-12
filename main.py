@@ -344,8 +344,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     points, got_coin, rank_up, new_rank = add_points(user.id, 1)
     USERS[str(user.id)]["name"] = user.first_name
     if got_coin:
-        await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
-        if "احبك" in text or "بحبك" in text or "اعشقك" in text or "بموت فيك" in text:
+    await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
+    if rank_up:
+    await update.message.reply_text(f"🎉 مبرووووك! ترقيت لرتبة {new_rank} 👑\nنقاطك: {points}")
+    if "احبك" in text or "بحبك" in text or "اعشقك" in text or "بموت فيك" in text:
             replies_love = [
             "وأنا بموت فيك يا قلبي ❤️",
             "القيصر كمان بيحبك، يا روحي 😍",
