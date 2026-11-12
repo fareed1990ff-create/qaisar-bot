@@ -312,7 +312,7 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     user = update.effective_user
-        points, got_coin, rank_up, new_rank = add_points(user.id, 1)
+    points, got_coin, rank_up, new_rank = add_points(user.id, 1)
     USERS[str(user.id)]["name"] = user.first_name
     data = USERS.get(str(user.id), {"points": 0, "coins": 0, "name": user.first_name})
     coins = data.get("coins", 0)
