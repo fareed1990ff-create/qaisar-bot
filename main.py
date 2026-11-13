@@ -44,8 +44,8 @@ USERS = {}
 _LOADED_OK = False
 
 # ===== نظام الأسئلة =====
-GROUP_CHAT_ID = None
-ACTIVE_QUIZ = None  # {q_index, message_id, answers: {user_id: (choice_idx, name)}, chat_id, end_time}
+GROUP_IDS = set()
+ACTIVE_QUIZZES = {}
 
 FUNNY_MESSAGES = [
     "😂 يا {name} شكلك كنت تحلل وانت نايم!",
@@ -105,6 +105,21 @@ def load_users_once():
     except Exception as e:
         print(f"Load error Supabase: {e}")
         _LOADED_OK = False
+        def save_group_id(chat_id):
+    GROUP_IDS.add(chat_id)
+    try:
+        supabase_req("settings?on_conflict=key", method="POST", data=[{"key": f"group_{chat_id}", "value": str(chat_id)}])
+    except:
+        pass
+
+def load_group_ids():
+    try:
+        rows = supabase_req("settings?key=like.group_%&select=*")
+        for r in rows:
+            GROUP_IDS.add(int(r["value"]))
+        print(f"Loaded groups: {GROUP_IDS}")
+    except Exception as e:
+        print(f"Load groups error: {e}")
 
 def save_users():
     if not USERS:
