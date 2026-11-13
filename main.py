@@ -125,12 +125,23 @@ def save_users():
     if not USERS:
         return
     try:
+        data_list = []
         for uid, u in USERS.items():
-            data = {"user_id": str(uid), "points": int(u.get("points", 0)), "name": str(u.get("name", "")), "coins": int(u.get("coins", 0)), "msg_count": int(u.get("msg_count", 0))}
-            supabase_req("users?on_conflict=user_id", method="POST", data=[data])
-        print(f"Saved {len(USERS)} users to Supabase")
+            data_list.append({"user_id": str(uid), "points": int(u.get("points", 0)), "name": str(u.get("name", "")), "coins": int(u.get("coins", 0)), "msg_count": int(u.get("msg_count", 0))})
+        supabase_req("users?on_conflict=user_id", method="POST", data=data_list)
+        print(f"Saved {len(USERS)} users in 1 request")
     except Exception as e:
         print(f"Save error Supabase: {e}")
+
+def save_one_user(uid):
+    try:
+        u = USERS.get(str(uid))
+        if not u:
+            return
+        data = {"user_id": str(uid), "points": int(u.get("points", 0)), "name": str(u.get("name", "")), "coins": int(u.get("coins", 0)), "msg_count": int(u.get("msg_count", 0))}
+        supabase_req("users?on_conflict=user_id", method="POST", data=[data])
+    except Exception as e:
+        print(f"Save one error: {e}")
 
 def get_rank_name(points):
     if points < 100: return "عضو جديد"
@@ -202,7 +213,7 @@ def add_points(user_id, amount):
             u["coins"] += 1
             u["msg_count"] = 0
             got_coin = True
-        save_users()
+            save_one_user(user_id)
         return u["points"], got_coin, rank_up, new_rank
 
 def add_coins(user_id, amount):
