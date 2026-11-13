@@ -424,7 +424,7 @@ async def quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if str(user.id) not in USERS:
             USERS[str(user.id)] = {"points": 0, "name": user.first_name, "coins": 0, "msg_count": 0}
         else:
-            USERS[str(user.id)]["name"] = user.first_name. 
+            USERS[str(user.id)]["name"] = user.first_name
     save_one_user(user.id)
     await query.answer("تم تسجيل جوابك! استنى انتهاء الوقت 🔥", show_alert=False)
 
