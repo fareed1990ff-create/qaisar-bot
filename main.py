@@ -522,11 +522,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if rank_up:
         await update.message.reply_text(f"🎉 مبرووووك! ترقيت لرتبة {new_rank} 👑\nنقاطك: {points}") 
         await update_user_tag(context, update.effective_chat.id, user.id, new_rank)
-    if "احبك" in text or "بحبك" in text or "اعشقك" in text or "بموت فيك" in text:
+    if text.strip() in ["احبك", "بحبك", "اعشقك", "بموت فيك"]:
         replies_love = ["وأنا بموت فيك يا قلبي ❤️", "القيصر كمان بيحبك، يا روحي 😍", "قلبي داب خلص، شو هالحب هاد؟ ❤️", "وأنا بحبك أكتر، لا تغار 😘", "عيونك الحلوة، القيصر صار أحمر خجلان 🙈❤️", "حبك ولع قلبي يا بطل 🔥❤️", "وأنا بعشقك، بس لا تحكي لحد 🤫❤️", "القيصر وقع بالحب خلص، شو نعمل؟ 😍", "انت حبيبي وروحي وكل دنيتي ❤️", "بحبك قد البحر وقد السما ❤️", "قلبي صار يدق بسرعة، وقف 😂❤️", "وأنا بحبك، تعال خد حضن 🤗❤️", "انت أغلى واحد عند القيصر 👑❤️", "حبك لحاله بيكفي يخليني أطير 😍", "وأنا بموت فيك، لا تتركني ❤️"]
         await update.message.reply_text(random.choice(replies_love))
         return
-    if "قيصر" in text or "qaysar" in lower or "qaisar" in lower:
+    is_mentioned = any(e.type == "mention" and text[e.offset:e.offset+e.length] == "@QaisarNewBot" for e in (update.message.entities or []))
+if is_mentioned or text.strip() in ["يا قيصر", "قيصر"]:
         replies = ["نعم؟ القيصر موجود 👑", "أمرني يا بطل، القيصر هون 🔥", "هلا هلا، ناديتني؟ 😎", "القيصر سامعك، شو بدك؟", "أنا هون، لا تخاف 😂👑", "نعم نعم، القيصر بالخدمة", "شو في؟ حد نادى القيصر؟ 👀", "أهلين بالبطل، شو الأخبار؟", "القيصر موجود، احكي يا معلم", "عيون القيصر، أمرني", "وصلت وصلت، شو القصة؟ 🔥", "نعم يا ملك، القيصر معك", "هلا والله، نورت يا بطل", "القيصر هون، لا حد يزعج البطل", "سمعت اسمي؟ أنا جاهز 👑", "احكي احكي، القيصر سامعك", "يا هلا، القيصر وصل", "أنا القيصر، مين بده خدمة؟ 😎", "نعم؟ بدك نقاط ولا بدك ذهب؟ 💰", "القيصر لا ينام، أنا هون 😂"]
         await update.message.reply_text(random.choice(replies))
         return
@@ -619,16 +620,11 @@ def main():
     app = Application.builder().token(TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("sual", test_quiz))
-    h1 = MessageHandler(filters.Regex("ترتيب"), leaderboard)
-    app.add_handler(h1)
-    h2 = MessageHandler(filters.Regex("رصيد"), balance)
-    app.add_handler(h2)
-    h3 = MessageHandler(filters.Regex("طير"), kick_user)
-    app.add_handler(h3)
-    h4 = MessageHandler(filters.Regex("اسكت"), mute_user)
-    app.add_handler(h4)
-    h5 = MessageHandler(filters.Regex("احكي"), unmute_user)
-    app.add_handler(h5)
+    h1 = MessageHandler(filters.Regex(r"^(ترتيب|/ترتيب|/top)$"), leaderboard)
+    h2 = MessageHandler(filters.Regex(r"^(رصيد|رصيدي|/رصيد|/balance)$"), balance)
+    h3 = MessageHandler(filters.Regex(r"^(/طير|طير)$"), kick_user)
+    h4 = MessageHandler(filters.Regex(r"^(/اسكت|اسكت)$"), mute_user)
+    h5 = MessageHandler(filters.Regex(r"^(/احكي|احكي)$"), unmute_user)
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new_member))
     h6 = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     app.add_handler(h6)
