@@ -553,11 +553,14 @@ async def unmute_user(update, context):
     except Exception as e:
         await update.message.reply_text(f"❌ ما قدرت افك عنه: {e}")
 
+async def post_init(a):
+    asyncio.create_task(quiz_loop(a))
+
 def main():
     keep_alive()
     global USERS
     load_users_once()
-    app = Application.builder().token(TOKEN).build()
+    app = Application.builder().token(TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("sual", test_quiz))
     h1 = MessageHandler(filters.Regex("ترتيب"), leaderboard)
@@ -572,10 +575,7 @@ def main():
     app.add_handler(h5)
     h6 = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     app.add_handler(h6)
-    app.add_handler(CallbackQueryHandler(buttons_handler))  
-async def post_init(a):
-    asyncio.create_task(quiz_loop(a))
-    app.post_init = post_init
+    app.add_handler(CallbackQueryHandler(buttons_handler))
     print("Bot is running...")
     app.run_polling()
 
