@@ -573,8 +573,7 @@ def main():
     h6 = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     app.add_handler(h6)
     app.add_handler(CallbackQueryHandler(buttons_handler))
-    if app.job_queue:
-        app.job_queue.run_repeating(send_quiz, interval=7200, first=10)
+    asyncio.create_task(quiz_loop(app))
     print("Bot is running...")
     app.run_polling()
 
