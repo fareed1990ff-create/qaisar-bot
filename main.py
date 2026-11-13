@@ -324,7 +324,7 @@ async def send_quiz_for_chat(context, chat_id):
     try:
         msg = await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
         ACTIVE_QUIZZES[chat_id] = {"q_index": q_index, "message_id": msg.message_id, "chat_id": chat_id, "answers": {}}
-        context.job_queue.run_once(lambda c: finish_quiz_for_chat(c, chat_id), when=120)
+        context.job_queue.run_once(lambda c: finish_quiz(c, chat_id), when=120)
         print(f"Quiz sent: {q_index} to {chat_id}")
     except Exception as e:
         print(f"Send quiz failed {chat_id}: {e}")
@@ -337,14 +337,15 @@ async def send_quiz(context):
     for chat_id in list(GROUP_IDS):
         await send_quiz_for_chat(context, chat_id)
 
-async def finish_quiz(context):
-    global ACTIVE_QUIZ
-    if ACTIVE_QUIZ is None:
+async def finish_quiz(context, chat_id=None):
+    if chat_id is None:
         return
-    q_index = ACTIVE_QUIZ["q_index"]
-    chat_id = ACTIVE_QUIZ["chat_id"]
-    answers = ACTIVE_QUIZ["answers"]
-    message_id = ACTIVE_QUIZ["message_id"]
+    quiz = ACTIVE_QUIZZES.get(chat_id)
+    if not quiz:
+        return
+    q_index = quiz["q_index"]
+    answers = quiz["answers"]
+    message_id = quiz["message_id"]
     q = QUESTIONS[q_index]
     correct = q["correct"]
     labels = ["A", "B", "C", "D"]
