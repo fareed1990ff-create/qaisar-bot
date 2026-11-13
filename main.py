@@ -46,6 +46,8 @@ _LOADED_OK = False
 # ===== نظام الأسئلة =====
 GROUP_IDS = set()
 ACTIVE_QUIZZES = {}
+WEEKLY = {}
+HERO_JOB_STARTED = False
 
 FUNNY_MESSAGES = [
     "😂 يا {name} شكلك كنت تحلل وانت نايم!",
@@ -206,7 +208,9 @@ def add_points(user_id, amount):
         old_rank = get_rank_name(u["points"])
         u["points"] += amount
         u["msg_count"] += 1
-        new_rank = get_rank_name(u["points"])
+        
+        new_rank =        # نقاط أسبوعية لبطل الأسبوع
+        WEEKLY[uid] = WEEKLY.get(uid, 0) + amount get_rank_name(u["points"])
         rank_up = new_rank != old_rank
         got_coin = False
         if u["msg_count"] >= 50:
@@ -380,6 +384,7 @@ async def finish_quiz(context, chat_id=None):
     if winners:
         for uid, name in winners:
             new_coins = add_coins(int(uid), 1)
+            WEEKLY[str(uid)] = WEEKLY.get(str(uid), 0) + 10
             winners_text += f"🏆 @{name} - ربح 1 عملة ذهبية 🪙 (صار معو {new_coins})\n"
     else:
         winners_text = "😔 ما حد جاوب صح هالمرة!"
@@ -626,6 +631,85 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
             print(f"Welcome failed: {e}")
 async def post_init(a):
     asyncio.create_task(quiz_loop(a))
+    asyncio.create_task(weekly_hero_loop(a))
+# ===== بطل الأسبوع =====
+async def announce_weekly_hero(context):
+    if not WEEKLY:
+        return
+    # ترتيب الأسبوعي
+    sorted_weekly = sorted(WEEKLY.items(), key=lambda x: x[1], reverse=True)
+    winner_id, winner_points = sorted_weekly[0]
+    winner_data = USERS.get(str(winner_id), {})
+    winner_name = winner_data.get("name", "بطل") or "بطل"
+    # الجائزة 10 عملات
+    new_coins = add_coins(int(winner_id), 10)
+    # نص الترتيب Top 5
+    top_text = ""
+    for i, (uid, pts) in enumerate(sorted_weekly[:5], 1):
+        nm = USERS.get(str(uid), {}).get("name", "بطل") or "بطل"
+        emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else "▫️"
+        top_text += f"{emoji} {i}. {nm} - {pts} نقطة أسبوعية\n"
+    # بطاقة البطل
+    try:
+        card = make_card(winner_name, winner_data.get("points", 0), new_coins, get_real_rank(winner_id))
+    except:
+        card = None
+    caption = f"👑 بطل الأسبوع 👑\n\n🏆 {winner_name}\n⭐ {winner_points} نقطة أسبوعية\n🪙 الجائزة: +10 عملات ذهبية (صار معو {new_coins})\n\n🏆 ترتيب الأسبوع:\n{top_text}\n\nمبروووك يا بطل! 🔥"
+    for chat_id in list(GROUP_IDS):
+        try:
+            if card:
+                card.seek(0)
+                await context.bot.send_photo(chat_id=chat_id, photo=card, caption=caption)
+            else:
+                await context.bot.send_message(chat_id=chat_id, text=caption)
+        except Exception as e:
+            print(f"Hero announce failed {chat_id}: {e}")
+    # تصفير الأسبوع
+    WEEKLY.clear()
+
+async def weekly_hero_loop(app):
+    global HERO_JOB_STARTED
+    if HERO_JOB_STARTED:
+        return
+    HERO_JOB_STARTED = True
+    while True:
+        try:
+            import datetime
+            now = datetime.datetime.now()
+            # الجمعة = 4 في بايثون (الاثنين=0)
+            # بنفحص كل 10 دقائق، إذا كان جمعة والساعة 20
+            if now.weekday() == 4 and now.hour == 20 and now.minute < 10:
+                fake_context = type("C", (), {"bot": app.bot})()
+                await announce_weekly_hero(fake_context)
+                await asyncio.sleep(3600)
+        except Exception as e:
+            print(f"Hero loop error: {e}")
+        await asyncio.sleep(600)
+        async def weekly_points(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    pts = WEEKLY.get(str(user.id), 0)
+    sorted_weekly = sorted(WEEKLY.items(), key=lambda x: x[1], reverse=True)
+    rank = 1
+    for uid, _ in sorted_weekly:
+        if uid == str(user.id):
+            break
+        rank += 1
+    else:
+        rank = len(sorted_weekly) + 1
+    await update.message.reply_text(f"⭐ نقاطك الأسبوعية يا {user.first_name}: {pts} نقطة\n🏆 ترتيبك الأسبوعي: #{rank}\n\n👑 بطل الأسبوع بياخد 10 عملات ذهبية كل جمعة 8 المسا!")
+
+async def weekly_leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not WEEKLY:
+        await update.message.reply_text("😔 لسه ما حد جمع نقاط هالأسبوع!\nاكتب أي رسالة عشان تبلش تجمع.")
+        return
+    sorted_weekly = sorted(WEEKLY.items(), key=lambda x: x[1], reverse=True)[:10]
+    text = "🏆 ترتيب بطل الأسبوع:\n\n"
+    for i, (uid, pts) in enumerate(sorted_weekly, 1):
+        nm = USERS.get(str(uid), {}).get("name", "بطل") or "بطل"
+        emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else "▫️"
+        text += f"{emoji} {i}. {nm} - {pts} نقطة أسبوعية\n"
+    text += "\n👑 الفائز كل جمعة 8 المسا بياخد 10 عملات ذهبية 🪙"
+    await update.message.reply_text(text)
 
 def main():
     keep_alive()
@@ -640,6 +724,8 @@ def main():
     h3 = MessageHandler(filters.Regex(r"^(/طير|طير)$"), kick_user)
     h4 = MessageHandler(filters.Regex(r"^(/اسكت|اسكت)$"), mute_user)
     h5 = MessageHandler(filters.Regex(r"^(/احكي|احكي)$"), unmute_user)
+    h7 = MessageHandler(filters.Regex(r"^(نقاطي|/نقاطي)$"), weekly_points)
+    h8 = MessageHandler(filters.Regex(r"^(بطل الأسبوع|/بطل)$"), weekly_leaderboard)
     app.add_handler(h1)
     app.add_handler(h2)
     app.add_handler(h3)
