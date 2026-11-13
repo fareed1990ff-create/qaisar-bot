@@ -381,10 +381,9 @@ async def finish_quiz(context, chat_id=None):
         await context.bot.send_message(chat_id=chat_id, text=final_text)
     except Exception as e:
         print(f"Finish quiz send failed: {e}")
-    ACTIVE_QUIZ = None
+    del ACTIVE_QUIZZES[chat_id]
 
 async def quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global ACTIVE_QUIZ
     query = update.callback_query
     data = query.data  # quiz_qindex_choice
     try:
@@ -396,15 +395,16 @@ async def quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     user = query.from_user
     # اذا ما في سؤال فعال
-    if ACTIVE_QUIZ is None or ACTIVE_QUIZ["q_index"] != q_idx:
+    quiz = ACTIVE_QUIZZES.get(query.message.chat_id)
+if not quiz or quiz["q_index"] != q_idx:
         await query.answer("انتهى وقت السؤال!", show_alert=True)
         return
     # ممنوع تغيير الجواب
-    if str(user.id) in ACTIVE_QUIZ["answers"]:
+    if str(user.id) in quiz["answers"]:
         await query.answer("انت جاوبت قبل هيك! ممنوع تغيير الجواب 😂", show_alert=True)
         return
     # حفظ الجواب
-    ACTIVE_QUIZ["answers"][str(user.id)] = (choice, user.first_name)
+    quiz["answers"][str(user.id)] = (choice, user.first_name)
     # حفظ اسم المستخدم
     with _LOCK:
         if str(user.id) not in USERS:
