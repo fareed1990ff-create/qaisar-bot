@@ -272,7 +272,7 @@ def make_card(name, points, coins, rank):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-        with _LOCK:
+    with _LOCK:
         if str(user.id) not in USERS:
             USERS[str(user.id)] = {"points": 0, "name": user.first_name, "coins": 0, "msg_count": 0}
         else:
