@@ -396,7 +396,7 @@ async def quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = query.from_user
     # اذا ما في سؤال فعال
     quiz = ACTIVE_QUIZZES.get(query.message.chat_id)
-if not quiz or quiz["q_index"] != q_idx:
+    if not quiz or quiz["q_index"] != q_idx:
         await query.answer("انتهى وقت السؤال!", show_alert=True)
         return
     # ممنوع تغيير الجواب
