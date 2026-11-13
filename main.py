@@ -269,8 +269,8 @@ def make_card(name, points, coins, rank):
     if fill_w > 10:
         d.rounded_rectangle([bar_x1+3, bar_y1+3, bar_x1+fill_w-3, bar_y2-3], radius=14, fill=(212, 175, 55))
     center(440, f"{percent}%  -  {points} / {next_limit}", font_mid, (255, 255, 255))
-    d.rounded_rectangle([300, 510, W-300, 610], radius=30, fill=(212, 175, 55))
-    d.rounded_rectangle([310, 520, W-310, 600], radius=25, fill=(60, 40, 5))
+    d.rounded_rectangle([300, 500, W-300, 620], radius=30, fill=(40, 20, 60))
+    d.rounded_rectangle([310, 510, W-310, 610], radius=25, fill=(25, 10, 35))
     center(528, "العملات الذهبية", font_mid, (212, 175, 55))
     center(580, str(coins), font_big, (255, 215, 0))
     d.rounded_rectangle([300, 650, W-300, 760], radius=30, fill=(40, 20, 60))
