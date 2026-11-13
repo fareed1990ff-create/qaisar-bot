@@ -520,7 +520,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if got_coin:
         await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
     if rank_up:
-        await update.message.reply_text(f"🎉 مبرووووك! ترقيت لرتبة {new_rank} 👑\nنقاطك: {points}")
+        await update.message.reply_text(f"🎉 مبرووووك! ترقيت لرتبة {new_rank} 👑\nنقاطك: {points}") 
+        await update_user_tag(context, update.effective_chat.id, user.id, new_rank)
     if "احبك" in text or "بحبك" in text or "اعشقك" in text or "بموت فيك" in text:
         replies_love = ["وأنا بموت فيك يا قلبي ❤️", "القيصر كمان بيحبك، يا روحي 😍", "قلبي داب خلص، شو هالحب هاد؟ ❤️", "وأنا بحبك أكتر، لا تغار 😘", "عيونك الحلوة، القيصر صار أحمر خجلان 🙈❤️", "حبك ولع قلبي يا بطل 🔥❤️", "وأنا بعشقك، بس لا تحكي لحد 🤫❤️", "القيصر وقع بالحب خلص، شو نعمل؟ 😍", "انت حبيبي وروحي وكل دنيتي ❤️", "بحبك قد البحر وقد السما ❤️", "قلبي صار يدق بسرعة، وقف 😂❤️", "وأنا بحبك، تعال خد حضن 🤗❤️", "انت أغلى واحد عند القيصر 👑❤️", "حبك لحاله بيكفي يخليني أطير 😍", "وأنا بموت فيك، لا تتركني ❤️"]
         await update.message.reply_text(random.choice(replies_love))
