@@ -425,7 +425,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             USERS[str(user.id)]["name"] = user.first_name
     save_users()
-    keyboard = [[InlineKeyboardButton("🪙 العملات الذهبية", callback_data="coins_info"), InlineKeyboardButton("🎮 قريبا", callback_data="soon")], [InlineKeyboardButton("💰 رصيدي", callback_data="balance"), InlineKeyboardButton("🏆 ترتيب الأبطال", callback_data="leaderboard")]]
+        keyboard = [
+        [InlineKeyboardButton("🪙 العملات الذهبية", callback_data="coins_info"), InlineKeyboardButton("🎮 قريبا", callback_data="soon")],
+        [InlineKeyboardButton("💰 رصيدي", callback_data="balance"), InlineKeyboardButton("🏆 ترتيب الأبطال", callback_data="leaderboard")],
+        [InlineKeyboardButton("➕ ضيفنا لقناتك ✨", url="https://t.me/QaisarNewBot?startgroup=true"), InlineKeyboardButton("📢 القناة الرسمية 🔥", url="https://t.me/QaisarBotOfficial")],
+    ]
     markup = InlineKeyboardMarkup(keyboard)
     caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!"
     try:
