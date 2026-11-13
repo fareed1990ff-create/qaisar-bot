@@ -424,8 +424,8 @@ async def quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if str(user.id) not in USERS:
             USERS[str(user.id)] = {"points": 0, "name": user.first_name, "coins": 0, "msg_count": 0}
         else:
-            USERS[str(user.id)]["name"] = user.first_name
-    save_users()
+            USERS[str(user.id)]["name"] = user.first_name. 
+    save_one_user(user.id)
     await query.answer("تم تسجيل جوابك! استنى انتهاء الوقت 🔥", show_alert=False)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -435,7 +435,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             USERS[str(user.id)] = {"points": 0, "name": user.first_name, "coins": 0, "msg_count": 0}
         else:
             USERS[str(user.id)]["name"] = user.first_name
-    save_users()
+    save_one_user(user.id)
     keyboard = [
         [InlineKeyboardButton("🪙 العملات الذهبية", callback_data="coins_info"), InlineKeyboardButton("🎮 قريبا", callback_data="soon")],
         [InlineKeyboardButton("💰 رصيدي", callback_data="balance"), InlineKeyboardButton("🏆 ترتيب الأبطال", callback_data="leaderboard")],
