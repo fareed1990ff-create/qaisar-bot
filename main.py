@@ -572,8 +572,8 @@ def main():
     app.add_handler(h5)
     h6 = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     app.add_handler(h6)
-    app.add_handler(CallbackQueryHandler(buttons_handler))
-    async def post_init(a):
+    app.add_handler(CallbackQueryHandler(buttons_handler))  
+async def post_init(a):
     asyncio.create_task(quiz_loop(a))
     app.post_init = post_init
     print("Bot is running...")
