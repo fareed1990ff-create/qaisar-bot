@@ -527,7 +527,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(random.choice(replies_love))
         return
     is_mentioned = any(e.type == "mention" and text[e.offset:e.offset+e.length] == "@QaisarNewBot" for e in (update.message.entities or []))
-if is_mentioned or text.strip() in ["يا قيصر", "قيصر"]:
+    if is_mentioned or text.strip() in ["يا قيصر", "قيصر"]:
         replies = ["نعم؟ القيصر موجود 👑", "أمرني يا بطل، القيصر هون 🔥", "هلا هلا، ناديتني؟ 😎", "القيصر سامعك، شو بدك؟", "أنا هون، لا تخاف 😂👑", "نعم نعم، القيصر بالخدمة", "شو في؟ حد نادى القيصر؟ 👀", "أهلين بالبطل، شو الأخبار؟", "القيصر موجود، احكي يا معلم", "عيون القيصر، أمرني", "وصلت وصلت، شو القصة؟ 🔥", "نعم يا ملك، القيصر معك", "هلا والله، نورت يا بطل", "القيصر هون، لا حد يزعج البطل", "سمعت اسمي؟ أنا جاهز 👑", "احكي احكي، القيصر سامعك", "يا هلا، القيصر وصل", "أنا القيصر، مين بده خدمة؟ 😎", "نعم؟ بدك نقاط ولا بدك ذهب؟ 💰", "القيصر لا ينام، أنا هون 😂"]
         await update.message.reply_text(random.choice(replies))
         return
