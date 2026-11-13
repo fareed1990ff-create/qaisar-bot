@@ -684,8 +684,8 @@ async def weekly_hero_loop(app):
                 await asyncio.sleep(3600)
         except Exception as e:
             print(f"Hero loop error: {e}")
-        await asyncio.sleep(600)
-        async def weekly_points(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await asyncio.sleep(600) 
+async def weekly_points(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     pts = WEEKLY.get(str(user.id), 0)
     sorted_weekly = sorted(WEEKLY.items(), key=lambda x: x[1], reverse=True)
