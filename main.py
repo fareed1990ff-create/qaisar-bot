@@ -272,7 +272,9 @@ async def quiz_loop(app):
             await send_quiz(fake_context)
         except Exception as e:
             print(f"Quiz loop error: {e}")
-        await asyncio.sleep(7200)(context):
+        await asyncio.sleep(7200)
+
+async def send_quiz(context):
     global ACTIVE_QUIZ, GROUP_CHAT_ID
     if GROUP_CHAT_ID is None:
         print("No group yet, skip quiz")
