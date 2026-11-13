@@ -596,6 +596,18 @@ async def unmute_user(update, context):
     except Exception as e:
         await update.message.reply_text(f"❌ ما قدرت افك عنه: {e}")
 
+async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.new_chat_members:
+        return
+    for member in update.message.new_chat_members:
+        if member.id == context.bot.id:
+            continue
+        save_group_id(update.effective_chat.id)
+        text = f"👑 أهلين وسهلين يا {member.first_name} 🔥\nنورت مملكة القيصر!\n\nاكتب `رصيد` عشان تشوف بطاقتك\nوكل رسالة = 1 نقطة، وكل 50 رسالة = 1 عملة ذهبية 🪙"
+        try:
+            await update.message.reply_text(text)
+        except Exception as e:
+            print(f"Welcome failed: {e}")
 async def post_init(a):
     asyncio.create_task(quiz_loop(a))
 
@@ -617,6 +629,7 @@ def main():
     app.add_handler(h4)
     h5 = MessageHandler(filters.Regex("احكي"), unmute_user)
     app.add_handler(h5)
+    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new_member))
     h6 = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     app.add_handler(h6)
     app.add_handler(CallbackQueryHandler(buttons_handler))
