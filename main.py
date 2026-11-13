@@ -544,5 +544,24 @@ def main():
     load_users_once()
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("سؤال", test_quiz))
-    app.add_handler(MessageHandler(filters.Regex(r"^ترتيب$
+    app.add_handler(CommandHandler("sual", test_quiz))
+    h1 = MessageHandler(filters.Regex("ترتيب"), leaderboard)
+    app.add_handler(h1)
+    h2 = MessageHandler(filters.Regex("رصيد"), balance)
+    app.add_handler(h2)
+    h3 = MessageHandler(filters.Regex("طير"), kick_user)
+    app.add_handler(h3)
+    h4 = MessageHandler(filters.Regex("اسكت"), mute_user)
+    app.add_handler(h4)
+    h5 = MessageHandler(filters.Regex("احكي"), unmute_user)
+    app.add_handler(h5)
+    h6 = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
+    app.add_handler(h6)
+    app.add_handler(CallbackQueryHandler(buttons_handler))
+    if app.job_queue:
+        app.job_queue.run_repeating(send_quiz, interval=7200, first=10)
+    print("Bot is running...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
