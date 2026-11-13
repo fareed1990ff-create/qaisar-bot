@@ -128,6 +128,21 @@ def get_rank_name(points):
     elif points < 5000: return "النخبة"
     elif points < 7000: return "محلل"
     else: return "خبير استراتيجي"
+   def get_money_level(coins):
+    if coins == 0:
+        return "تحت الأرض 💀"
+    elif coins <= 10:
+        return "طفران 😂"
+    elif coins <= 25:
+        return "فقير 🥲"
+    elif coins <= 50:
+        return "ماشي حالو 🙂"
+    elif coins <= 100:
+        return "غني 💰"
+    elif coins <= 150:
+        return "عظامو ذهب 🦴✨"
+    else:
+        return "زنكيل 👑💰"
 
 def get_real_rank(user_id):
     sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)
@@ -188,7 +203,7 @@ def get_user(user_id):
     return USERS.get(str(user_id), {"points": 0, "coins": 0, "name": ""})
 
 def make_card(name, points, coins, rank):
-    W, H = 1200, 700
+    W, H = 1200, 820
     img = Image.new("RGB", (W, H), (15, 10, 5))
     d = ImageDraw.Draw(img)
     d.rectangle([20, 20, W-20, H-20], outline=(212, 175, 55), width=5)
@@ -202,15 +217,18 @@ def make_card(name, points, coins, rank):
     elif points < 5000: rank_name = "النخبة"
     elif points < 7000: rank_name = "محلل"
     else: rank_name = "خبير استراتيجي"
+    money_level = get_money_level(coins)
     try:
         import urllib.request
         if not os.path.exists("Amiri-Regular.ttf"):
             urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Regular.ttf", "Amiri-Regular.ttf")
         font_big = ImageFont.truetype("Amiri-Regular.ttf", 70)
         font_mid = ImageFont.truetype("Amiri-Regular.ttf", 45)
+        font_small = ImageFont.truetype("Amiri-Regular.ttf", 38)
     except:
         font_big = ImageFont.load_default()
         font_mid = font_big
+        font_small = font_big
     def center(y, text, font, color=(255, 255, 255)):
         t = str(text)
         bbox = d.textbbox((0, 0), t, font=font)
