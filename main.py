@@ -731,6 +731,8 @@ def main():
     app.add_handler(h3)
     app.add_handler(h4)
     app.add_handler(h5)
+    app.add_handler(h7)
+    app.add_handler(h8)
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new_member))
     h6 = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     app.add_handler(h6)
