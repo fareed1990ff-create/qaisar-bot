@@ -223,7 +223,7 @@ def add_coins(user_id, amount):
             USERS[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
         USERS[uid].setdefault("coins", 0)
         USERS[uid]["coins"] += amount
-        save_users()
+            save_one_user(user_id)
         return USERS[uid]["coins"]
 
 def get_user(user_id):
