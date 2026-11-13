@@ -209,8 +209,8 @@ def add_points(user_id, amount):
         u["points"] += amount
         u["msg_count"] += 1
         
-        new_rank =        # نقاط أسبوعية لبطل الأسبوع
-        WEEKLY[uid] = WEEKLY.get(uid, 0) + amount get_rank_name(u["points"])
+        new_rank = get_rank_name(u["points"])
+        WEEKLY[str(uid)] = WEEKLY.get(str(uid), 0) + 1
         rank_up = new_rank != old_rank
         got_coin = False
         if u["msg_count"] >= 50:
