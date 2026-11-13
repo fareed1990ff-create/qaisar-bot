@@ -312,29 +312,26 @@ async def quiz_loop(app):
             print(f"Quiz loop error: {e}")
         await asyncio.sleep(7200)
 
-async def send_quiz(context):
-    global ACTIVE_QUIZ, GROUP_CHAT_ID
-    if GROUP_CHAT_ID is None:
-        print("No group yet, skip quiz")
-        return
-    if ACTIVE_QUIZ is not None:
+async def send_quiz_for_chat(context, chat_id):
+    if chat_id in ACTIVE_QUIZZES:
         return
     q_index = random.randrange(len(QUESTIONS))
     q = QUESTIONS[q_index]
-    keyboard = []
     labels = ["A", "B", "C", "D"]
-    for i, opt in enumerate(q["options"]):
-        keyboard.append([InlineKeyboardButton(f"{labels[i]} - {opt}", callback_data=f"quiz_{q_index}_{i}")])
+    keyboard = [[InlineKeyboardButton(f"{labels[i]} - {opt}", callback_data=f"quiz_{q_index}_{i}")] for i, opt in enumerate(q["options"])]
     markup = InlineKeyboardMarkup(keyboard)
     text = f"🎖️ سؤال عسكري جديد! 🎖️\n\n❓ {q['q']}\n\n⏳ معك 2 دقيقة فقط!\n🪙 اللي بجاوب صح بياخد 1 عملة ذهبية\n⚠️ ممنوع تغيير الجواب!"
     try:
-        msg = await context.bot.send_message(chat_id=GROUP_CHAT_ID, text=text, reply_markup=markup)
-        ACTIVE_QUIZ = {"q_index": q_index, "message_id": msg.message_id, "chat_id": GROUP_CHAT_ID, "answers": {}}
-        # جدولة انهاء السؤال بعد 2 دقيقة
-        asyncio.create_task(finish_after_120(context))
-        print(f"Quiz sent: {q_index}")
+        msg = await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
+        ACTIVE_QUIZZES[chat_id] = {"q_index": q_index, "message_id": msg.message_id, "chat_id": chat_id, "answers": {}}
+        context.job_queue.run_once(lambda c: finish_quiz_for_chat(c, chat_id), when=120)
+        print(f"Quiz sent: {q_index} to {chat_id}")
     except Exception as e:
-        print(f"Send quiz failed: {e}")
+        print(f"Send quiz failed {chat_id}: {e}")
+
+async def send_quiz(context):
+    for chat_id in list(GROUP_IDS):
+        await send_quiz_for_chat(context, chat_id)
 
 async def finish_quiz(context):
     global ACTIVE_QUIZ
@@ -507,7 +504,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     # تعرف على الجروب تلقائيا
     if update.effective_chat.type in ["group", "supergroup"]:
-        GROUP_CHAT_ID = update.effective_chat.id
+                save_group_id(update.effective_chat.id)
     text = update.message.text
     user = update.effective_user
     lower = text.lower()
