@@ -333,6 +333,10 @@ async def send_quiz(context):
     for chat_id in list(GROUP_IDS):
         await send_quiz_for_chat(context, chat_id)
 
+async def send_quiz(context):
+    for chat_id in list(GROUP_IDS):
+        await send_quiz_for_chat(context, chat_id)
+
 async def finish_quiz(context):
     global ACTIVE_QUIZ
     if ACTIVE_QUIZ is None:
