@@ -74,24 +74,19 @@ def load_users_once():
         _LOADED_OK = False
 
         _LOADED_OK = False
-
 def save_users():
-    if not _LOADED_OK:
-        print("Skip save - not loaded yet")
-        return
     if not USERS:
-        print("Skip save - USERS empty")
         return
     try:
         for uid, u in USERS.items():
             data = {
-                "user_id": uid,
-                "points": u.get("points", 0),
-                "name": u.get("name", ""),
-                "coins": u.get("coins", 0),
-                "msg_count": u.get("msg_count", 0),
+                "user_id": str(uid),
+                "points": int(u.get("points", 0)),
+                "name": str(u.get("name", "")),
+                "coins": int(u.get("coins", 0)),
+                "msg_count": int(u.get("msg_count", 0)),
             }
-            supabase_req("users?on_conflict=user_id", method="POST", data=data)
+            supabase_req("users?on_conflict=user_id", method="POST", data=[data])
         print(f"Saved {len(USERS)} users to Supabase")
     except Exception as e:
         print(f"Save error Supabase: {e}")
