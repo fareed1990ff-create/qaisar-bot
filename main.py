@@ -4,6 +4,7 @@ import random
 import copy
 import io
 import threading
+import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
@@ -16,7 +17,7 @@ import urllib.request
 SUPABASE_URL = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
 SUPABASE_KEY = (os.environ.get("SUPABASE_KEY") or "").strip()
 print(f"DEBUG SUPABASE_URL={SUPABASE_URL[:30]} KEY_LEN={len(SUPABASE_KEY)}")
-# هاي عشان Render المجاني ما يطفي البوت - بيفتح بورت وهمي
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -30,24 +31,60 @@ def keep_alive():
     server = HTTPServer(("0.0.0.0", port), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
-# هاي بس للصورة، مش للنص 
 def fix_arabic_img(text):
     try:
         reshaped = arabic_reshaper.reshape(str(text))
         return get_display(reshaped)
     except:
         return str(text)
+
 _LOCK = threading.Lock()
 USERS = {}
 _LOADED_OK = False
+
+# ===== نظام الأسئلة =====
+GROUP_CHAT_ID = None
+ACTIVE_QUIZ = None  # {q_index, message_id, answers: {user_id: (choice_idx, name)}, chat_id, end_time}
+
+FUNNY_MESSAGES = [
+    "😂 يا {name} شكلك كنت تحلل وانت نايم!",
+    "😂 {name} تحليلك راح فيها، روح نام وارجع!",
+    "😂 القيصر بقولك يا {name}: ركز المرة الجاية يا محلل!",
+    "🤦 {name} لو كان الصاروخ بيعرف انك هيك جاوبت كان وقع لحالو!",
+    "😂 {name} انت متأكد انك بتتابع تحليل عسكري؟ ولا بتتابع طبخ؟",
+    "🫣 {name} هاد الجواب خلّى الرادار يطفي من الخجل!",
+    "😂 {name} حتى الدرون ضحك على جوابك!",
+    "💀 {name} تحليلك وصل لمرحلة الخطر، لازم دورة انعاش!",
+    "😂 {name} انت جاوبت صح؟ لا والله، جاوبت غلط بثقة!",
+    "🪖 {name} القيصر قرر يخصم منك رتبة عسكرية وهمية لهالجواب!"
+]
+
+QUESTIONS = [
+    {"q": "ما هي المهمة الأساسية لنظام الدفاع الجوي S-400؟", "options": ["تدمير الدبابات", "اعتراض الطائرات والصواريخ", "نقل الجنود", "التجسس البحري"], "correct": 1, "explain": "S-400 مصمم لاعتراض الطائرات والمسيرات والصواريخ الباليستية على مدى بعيد، وهو من أقوى أنظمة الدفاع الجوي في العالم."},
+    {"q": "ما هو مدى صاروخ HIMARS التقريبي بالنسخة الأساسية؟", "options": ["20 كم", "80 كم", "300 كم", "1000 كم"], "correct": 1, "explain": "HIMARS بالصواريخ الأساسية GMLRS مداه حوالي 80 كم، وهو ما جعله سلاح دقيق وسريع الحركة في أوكرانيا."},
+    {"q": "لماذا تعتبر الدرونات الانتحارية خطيرة رغم رخص ثمنها؟", "options": ["لأنها سريعة جدا", "لأنها رخيصة ودقيقة وصعبة الرصد", "لأنها تحمل جنود", "لأنها لا تحتاج وقود"], "correct": 1, "explain": "الدرون الانتحاري رخيص، يطير منخفض، وصعب على الرادار، وبضرب بدقة عالية، لذلك غيّر شكل الحرب الحديثة."},
+    {"q": "ما هو الفرق بين الدبابة والمدرعة؟", "options": ["لا فرق", "الدبابة للهجوم الثقيل والمدفع الكبير، والمدرعة لنقل الجنود وحمايتهم", "المدرعة أقوى", "الدبابة تطير"], "correct": 1, "explain": "الدبابة هي قوة نارية ثقيلة بمدفع كبير، بينما المدرعة مهمتها نقل الجنود وحمايتهم والتحرك السريع."},
+    {"q": "ما هي أهم نقطة ضعف للدبابة في حرب المدن؟", "options": ["اللون", "الأعلى والسطح، لأنها مكشوفة للدرونات والصواريخ من فوق", "العجلات فقط", "صوت المحرك"], "correct": 1, "explain": "في حرب المدن، الدبابة ضعيفة من الأعلى، لذلك الدرونات والصواريخ المضادة للدروع تضربها من السطح."},
+    {"q": "ما هو دور الأقمار الصناعية في الحرب الحديثة؟", "options": ["تصوير فقط", "مراقبة تحركات العدو وتوجيه الصواريخ والاتصالات", "نقل الطعام", "لا دور لها"], "correct": 1, "explain": "الأقمار الصناعية هي عيون الجيش: بتراقب تحركات العدو، وبتوجه الصواريخ، وبتأمن الاتصالات."},
+    {"q": "لماذا تستخدم الجيوش التمويه والخداع؟", "options": ["للتجميل", "لخداع العدو وإجباره على ضرب أهداف وهمية", "لتوفير الوقود", "لإخافة المدنيين"], "correct": 1, "explain": "الخداع العسكري يخلي العدو يضرب دبابات وهمية ورادارات مزيفة، ويكشف مكانه بدون فائدة."},
+    {"q": "ما هو صاروخ كروز؟", "options": ["صاروخ يطير منخفض ويتتبع التضاريس ليصل لهدفه بدقة", "صاروخ فضائي", "قذيفة مدفع", "طائرة ركاب"], "correct": 0, "explain": "صاروخ الكروز يطير منخفض جدا ويتبع التضاريس ليصعب رصده، ويصل لهدفه بدقة عالية."},
+    {"q": "ما هي الحرب الإلكترونية؟", "options": ["حرب بالألعاب", "التشويش على اتصالات ورادارات العدو وتعطيلها", "حرب بالإنترنت فقط", "حرب بالروبوتات"], "correct": 1, "explain": "الحرب الإلكترونية هي التشويش على رادارات واتصالات العدو، وقطع GPS والدرونات، بدون إطلاق رصاصة."},
+    {"q": "لماذا تعتبر مضيق هرمز مهم عسكريا؟", "options": ["لأنه جميل", "لأنه يمر منه معظم نفط العالم، والسيطرة عليه تعني ضغط عالمي", "لأنه كبير", "لأنه قريب من أوروبا"], "correct": 1, "explain": "مضيق هرمز يمر منه حوالي 20% من نفط العالم، لذلك أي توتر فيه يرفع أسعار النفط ويهدد الاقتصاد العالمي."},
+    {"q": "ما هي ميزة المقاتلة الشبحية F-35؟", "options": ["تطير أسرع من الصوت فقط", "صعبة الرصد على الرادار وتجمع معلومات وترسلها لباقي الجيش", "تحمل جنود", "رخيصة"], "correct": 1, "explain": "F-35 ليست فقط شبحية، بل هي كمبيوتر طائر يجمع معلومات ويرسلها لكل الجيش لحظة بلحظة."},
+    {"q": "ما هو نظام القبة الحديدية؟", "options": ["دبابة", "نظام دفاع جوي قصير المدى لاعتراض الصواريخ قصيرة المدى", "غواصة", "صاروخ هجومي"], "correct": 1, "explain": "القبة الحديدية نظام دفاع جوي قصير المدى، يعترض الصواريخ والقذائف قبل وصولها للمدن."},
+    {"q": "لماذا تفشل الهجمات البرية الكبيرة بدون غطاء جوي؟", "options": ["لأن الجنود يتعبون", "لأن القوات تصبح مكشوفة للطيران والدرونات والمدفعية", "لأن الدبابات تتعطل", "لأن الطقس سيء"], "correct": 1, "explain": "بدون غطاء جوي، أي رتل دبابات يصبح هدف سهل للطيران والدرونات والمدفعية."},
+    {"q": "ما هو دور القوات الخاصة؟", "options": ["حراسة الحدود فقط", "عمليات دقيقة خلف خطوط العدو: تخريب، اغتيال، جمع معلومات", "تنظيف الشوارع", "نقل الطعام"], "correct": 1, "explain": "القوات الخاصة تنفذ عمليات صغيرة ودقيقة خلف خطوط العدو، هدفها تأثير كبير بقوة صغيرة."},
+    {"q": "ما هو الـ ATGM؟", "options": ["صاروخ مضاد للدبابات موجه", "طائرة", "رادار", "قنبلة"], "correct": 0, "explain": "ATGM هو صاروخ موجه مضاد للدبابات، مثل جافلين وكورنيت، يستطيع تدمير دبابة من مسافة بعيدة."},
+    {"q": "لماذا تستخدم الجيوش الأنفاق؟", "options": ["للاختباء فقط", "للتحرك السري وتخزين الأسلحة والحماية من القصف الجوي", "للسياحة", "للهروب"], "correct": 1, "explain": "الأنفاق تعطي حماية من القصف الجوي، وتسمح بالتحرك السري ونقل الأسلحة بدون أن يراها العدو."},
+    {"q": "ما هي نقطة قوة الغواصة؟", "options": ["السرعة", "التخفي تحت الماء والقدرة على ضرب أهداف بعيدة بدون أن تُرصد", "الحجم الكبير", "اللون الأسود"], "correct": 1, "explain": "الغواصة قوتها بالتخفي، تستطيع الاقتراب من العدو وضربه بصواريخ دون أن يكتشفها أحد."},
+    {"q": "ما هو الـ AWACS؟", "options": ["طائرة إنذار مبكر ورادار طائر", "دبابة", "صاروخ", "سفينة"], "correct": 0, "explain": "AWACS هي طائرة تحمل رادار ضخم، ترى كل شيء من الجو وتدير المعركة الجوية."},
+    {"q": "لماذا يعتبر الوقود واللوجستيات أهم من السلاح نفسه؟", "options": ["لأن السلاح بدون وقود وذخيرة وطعام لا يتحرك ولا يقاتل", "لأن الوقود غالي", "لأن الجنود يحبون الأكل", "لا أهمية"], "correct": 0, "explain": "أي جيش بدون وقود وذخيرة وطعام يتوقف خلال أيام، لذلك اللوجستيات هي التي تحسم الحرب الطويلة."},
+    {"q": "ما هو التكتيك الأفضل ضد رتل عسكري؟", "options": ["الهجوم من الأمام", "ضرب المقدمة والمؤخرة أولا لحصره، ثم تدميره", "الانتظار", "الهروب"], "correct": 1, "explain": "أفضل تكتيك ضد الرتل هو ضرب أول وآخر آلية لحصره في الطريق، ثم تدميره وهو عالق."},
+]
+
 def supabase_req(path, method="GET", data=None):
     url = f"{SUPABASE_URL}/rest/v1/{path}"
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "resolution=merge-duplicates"
-    }
+    headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates"}
     body = json.dumps(data).encode() if data is not None else None
     req = urllib.request.Request(url, data=body, method=method, headers=headers)
     with urllib.request.urlopen(req, timeout=10) as r:
@@ -61,56 +98,35 @@ def load_users_once():
         USERS = {}
         for row in rows:
             uid = str(row.get("user_id"))
-            USERS[uid] = {
-                "points": row.get("points", 0) or 0,
-                "name": row.get("name", "") or "",
-                "coins": row.get("coins", 0) or 0,
-                "msg_count": row.get("msg_count", 0) or 0,
-            }
+            USERS[uid] = {"points": row.get("points", 0) or 0, "name": row.get("name", "") or "", "coins": row.get("coins", 0) or 0, "msg_count": row.get("msg_count", 0) or 0}
         _LOADED_OK = True
         print(f"Loaded {len(USERS)} users from Supabase")
     except Exception as e:
         print(f"Load error Supabase: {e}")
         _LOADED_OK = False
 
-        _LOADED_OK = False
 def save_users():
     if not USERS:
         return
     try:
         for uid, u in USERS.items():
-            data = {
-                "user_id": str(uid),
-                "points": int(u.get("points", 0)),
-                "name": str(u.get("name", "")),
-                "coins": int(u.get("coins", 0)),
-                "msg_count": int(u.get("msg_count", 0)),
-            }
+            data = {"user_id": str(uid), "points": int(u.get("points", 0)), "name": str(u.get("name", "")), "coins": int(u.get("coins", 0)), "msg_count": int(u.get("msg_count", 0))}
             supabase_req("users?on_conflict=user_id", method="POST", data=[data])
         print(f"Saved {len(USERS)} users to Supabase")
     except Exception as e:
         print(f"Save error Supabase: {e}")
+
 def get_rank_name(points):
-    if points < 100:
-        return "عضو جديد"
-    elif points < 300:
-        return "مبتدئ"
-    elif points < 600:
-        return "بطل"
-    elif points < 1000:
-        return "نجم صاعد"
-    elif points < 1600:
-        return "محارب ذهبي"
-    elif points < 2400:
-        return "قائد"
-    elif points < 3600:
-        return "أسطورة"
-    elif points < 5000:
-        return "النخبة"
-    elif points < 7000:
-        return "محلل"
-    else:
-        return "خبير استراتيجي"
+    if points < 100: return "عضو جديد"
+    elif points < 300: return "مبتدئ"
+    elif points < 600: return "بطل"
+    elif points < 1000: return "نجم صاعد"
+    elif points < 1600: return "محارب ذهبي"
+    elif points < 2400: return "قائد"
+    elif points < 3600: return "أسطورة"
+    elif points < 5000: return "النخبة"
+    elif points < 7000: return "محلل"
+    else: return "خبير استراتيجي"
 
 def get_real_rank(user_id):
     sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)
@@ -121,16 +137,11 @@ def get_real_rank(user_id):
 
 async def update_user_tag(context, chat_id, user_id, rank_name):
     try:
-        await context.bot.set_chat_member_tag(
-            chat_id=chat_id,
-            user_id=user_id,
-            tag=rank_name
-        )
+        await context.bot.set_chat_member_tag(chat_id=chat_id, user_id=user_id, tag=rank_name)
         return True
     except Exception as e:
         print(f"Tag failed: {e}")
         try:
-            import urllib.request, json
             url = f"https://api.telegram.org/bot{TOKEN}/setChatMemberTag"
             data = json.dumps({"chat_id": chat_id, "user_id": user_id, "tag": rank_name}).encode()
             req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
@@ -140,6 +151,7 @@ async def update_user_tag(context, chat_id, user_id, rank_name):
         except Exception as e2:
             print(f"Tag direct failed: {e2}")
             return False
+
 def add_points(user_id, amount):
     with _LOCK:
         uid = str(user_id)
@@ -179,27 +191,16 @@ def make_card(name, points, coins, rank):
     img = Image.new("RGB", (W, H), (15, 10, 5))
     d = ImageDraw.Draw(img)
     d.rectangle([20, 20, W-20, H-20], outline=(212, 175, 55), width=5)
-
-    if points < 100:
-        rank_name = "عضو جديد"
-    elif points < 300:
-        rank_name = "مبتدئ"
-    elif points < 600:
-        rank_name = "بطل"
-    elif points < 1000:
-        rank_name = "نجم صاعد"
-    elif points < 1600:
-        rank_name = "محارب ذهبي"
-    elif points < 2400:
-        rank_name = "قائد"
-    elif points < 3600:
-        rank_name = "أسطورة"
-    elif points < 5000:
-        rank_name = "النخبة"
-    elif points < 7000:
-        rank_name = "محلل"
-    else:
-        rank_name = "خبير استراتيجي"
+    if points < 100: rank_name = "عضو جديد"
+    elif points < 300: rank_name = "مبتدئ"
+    elif points < 600: rank_name = "بطل"
+    elif points < 1000: rank_name = "نجم صاعد"
+    elif points < 1600: rank_name = "محارب ذهبي"
+    elif points < 2400: rank_name = "قائد"
+    elif points < 3600: rank_name = "أسطورة"
+    elif points < 5000: rank_name = "النخبة"
+    elif points < 7000: rank_name = "محلل"
+    else: rank_name = "خبير استراتيجي"
     try:
         import urllib.request
         if not os.path.exists("Amiri-Regular.ttf"):
@@ -209,33 +210,24 @@ def make_card(name, points, coins, rank):
     except:
         font_big = ImageFont.load_default()
         font_mid = font_big
-
     def center(y, text, font, color=(255, 255, 255)):
         t = str(text)
         bbox = d.textbbox((0, 0), t, font=font)
         w = bbox[2] - bbox[0]
         d.text(((W - w) // 2, y), t, font=font, fill=color)
-
     def center_at(x_center, y, text, font, color):
         t = str(text)
         bbox = d.textbbox((0, 0), t, font=font)
         w = bbox[2] - bbox[0]
         d.text((x_center - w//2, y), t, font=font, fill=color)
-
-    # 1. الاسم فوق
     center(50, name, font_big, (212, 175, 55))
-    # 2. 3 خانات جنب بعض بالعرض
     center_at(250, 200, "النقاط", font_mid, (200, 200, 200))
     center_at(250, 260, str(points), font_big, (90, 180, 255))
-
     center_at(600, 200, "الرتبة", font_mid, (200, 200, 200))
     center_at(600, 235, rank_name, font_big, (190, 140, 255))
-
     center_at(950, 200, "الترتيب", font_mid, (200, 200, 200))
     center_at(950, 260, f"#{rank}", font_big, (212, 175, 55))
-    # --- عداد الرتبة هون ---
     limits = [0, 100, 300, 600, 1000, 1600, 2400, 3600, 5000, 7000]
-    # وين انت هسا ووين الرتبة الجاية
     cur_limit = 0
     next_limit = 100
     for i, lim in enumerate(limits):
@@ -251,24 +243,121 @@ def make_card(name, points, coins, rank):
         percent = 100
     else:
         percent = int((points - cur_limit) / (next_limit - cur_limit) * 100)
-
-    # الشريط - بنفس مكان الأحمر
     bar_x1, bar_y1, bar_x2, bar_y2 = 250, 410, 950, 442
     d.rounded_rectangle([bar_x1, bar_y1, bar_x2, bar_y2], radius=17, fill=(45, 35, 10), outline=(212, 175, 55), width=3)
     fill_w = int((bar_x2 - bar_x1) * percent / 100)
     if fill_w > 10:
         d.rounded_rectangle([bar_x1+3, bar_y1+3, bar_x1+fill_w-3, bar_y2-3], radius=14, fill=(212, 175, 55))
     center(440, f"{percent}%  -  {points} / {next_limit}", font_mid, (255, 255, 255))
-    # 3. الذهب تحت بصندوق عريض - زي المربع الاحمر
     d.rounded_rectangle([300, 510, W-300, 610], radius=30, fill=(212, 175, 55))
     d.rounded_rectangle([310, 520, W-310, 600], radius=25, fill=(60, 40, 5))
     center(528, "العملات الذهبية", font_mid, (212, 175, 55))
     center(580, str(coins), font_big, (255, 215, 0))
-
     bio = io.BytesIO()
     img.save(bio, format="PNG")
     bio.seek(0)
     return bio
+
+# ===== دوال الأسئلة =====
+async def send_quiz(context):
+    global ACTIVE_QUIZ, GROUP_CHAT_ID
+    if GROUP_CHAT_ID is None:
+        print("No group yet, skip quiz")
+        return
+    if ACTIVE_QUIZ is not None:
+        return
+    q_index = random.randrange(len(QUESTIONS))
+    q = QUESTIONS[q_index]
+    keyboard = []
+    labels = ["A", "B", "C", "D"]
+    for i, opt in enumerate(q["options"]):
+        keyboard.append([InlineKeyboardButton(f"{labels[i]} - {opt}", callback_data=f"quiz_{q_index}_{i}")])
+    markup = InlineKeyboardMarkup(keyboard)
+    text = f"🎖️ سؤال عسكري جديد! 🎖️\n\n❓ {q['q']}\n\n⏳ معك 2 دقيقة فقط!\n🪙 اللي بجاوب صح بياخد 1 عملة ذهبية\n⚠️ ممنوع تغيير الجواب!"
+    try:
+        msg = await context.bot.send_message(chat_id=GROUP_CHAT_ID, text=text, reply_markup=markup)
+        ACTIVE_QUIZ = {"q_index": q_index, "message_id": msg.message_id, "chat_id": GROUP_CHAT_ID, "answers": {}}
+        # جدولة انهاء السؤال بعد 2 دقيقة
+        context.job_queue.run_once(finish_quiz, when=120, data={"q_index": q_index, "message_id": msg.message_id})
+        print(f"Quiz sent: {q_index}")
+    except Exception as e:
+        print(f"Send quiz failed: {e}")
+
+async def finish_quiz(context):
+    global ACTIVE_QUIZ
+    if ACTIVE_QUIZ is None:
+        return
+    q_index = ACTIVE_QUIZ["q_index"]
+    chat_id = ACTIVE_QUIZ["chat_id"]
+    answers = ACTIVE_QUIZ["answers"]
+    message_id = ACTIVE_QUIZ["message_id"]
+    q = QUESTIONS[q_index]
+    correct = q["correct"]
+    labels = ["A", "B", "C", "D"]
+    # قفل الأزرار
+    try:
+        await context.bot.edit_message_reply_markup(chat_id=chat_id, message_id=message_id, reply_markup=None)
+    except:
+        pass
+    winners = []
+    losers = []
+    for uid, (choice, name) in answers.items():
+        if choice == correct:
+            winners.append((uid, name))
+        else:
+            losers.append((uid, name))
+    # توزيع العملات
+    winners_text = ""
+    if winners:
+        for uid, name in winners:
+            new_coins = add_coins(int(uid), 1)
+            winners_text += f"🏆 @{name} - ربح 1 عملة ذهبية 🪙 (صار معو {new_coins})\n"
+    else:
+        winners_text = "😔 ما حد جاوب صح هالمرة!"
+    # رسائل مضحكة
+    funny_text = ""
+    if losers:
+        funny_text = "\n😂 اللي جاوبو غلط:\n"
+        for uid, name in losers:
+            funny_text += random.choice(FUNNY_MESSAGES).format(name=name) + "\n"
+    correct_text = q["options"][correct]
+    final_text = f"⏰ انتهى الوقت!\n\n✅ الجواب الصح: {labels[correct]} - {correct_text}\n\n📚 الشرح:\n{q['explain']}\n\n{winners_text}{funny_text}\n\nالسؤال الجاي بعد ساعتين 🔥"
+    try:
+        await context.bot.send_message(chat_id=chat_id, text=final_text)
+    except Exception as e:
+        print(f"Finish quiz send failed: {e}")
+    ACTIVE_QUIZ = None
+
+async def quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global ACTIVE_QUIZ
+    query = update.callback_query
+    data = query.data  # quiz_qindex_choice
+    try:
+        _, q_idx_str, choice_str = data.split("_")
+        q_idx = int(q_idx_str)
+        choice = int(choice_str)
+    except:
+        await query.answer()
+        return
+    user = query.from_user
+    # اذا ما في سؤال فعال
+    if ACTIVE_QUIZ is None or ACTIVE_QUIZ["q_index"] != q_idx:
+        await query.answer("انتهى وقت السؤال!", show_alert=True)
+        return
+    # ممنوع تغيير الجواب
+    if str(user.id) in ACTIVE_QUIZ["answers"]:
+        await query.answer("انت جاوبت قبل هيك! ممنوع تغيير الجواب 😂", show_alert=True)
+        return
+    # حفظ الجواب
+    ACTIVE_QUIZ["answers"][str(user.id)] = (choice, user.first_name)
+    # حفظ اسم المستخدم
+    with _LOCK:
+        if str(user.id) not in USERS:
+            USERS[str(user.id)] = {"points": 0, "name": user.first_name, "coins": 0, "msg_count": 0}
+        else:
+            USERS[str(user.id)]["name"] = user.first_name
+    save_users()
+    await query.answer("تم تسجيل جوابك! استنى انتهاء الوقت 🔥", show_alert=False)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -278,25 +367,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             USERS[str(user.id)]["name"] = user.first_name
     save_users()
-    keyboard = [
-        [InlineKeyboardButton("🪙 العملات الذهبية", callback_data="coins_info"),
-         InlineKeyboardButton("🎮 قريبا", callback_data="soon")],
-        [InlineKeyboardButton("💰 رصيدي", callback_data="balance"),
-         InlineKeyboardButton("🏆 ترتيب الأبطال", callback_data="leaderboard")]
-    ]
+    keyboard = [[InlineKeyboardButton("🪙 العملات الذهبية", callback_data="coins_info"), InlineKeyboardButton("🎮 قريبا", callback_data="soon")], [InlineKeyboardButton("💰 رصيدي", callback_data="balance"), InlineKeyboardButton("🏆 ترتيب الأبطال", callback_data="leaderboard")]]
     markup = InlineKeyboardMarkup(keyboard)
     caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!"
-    img = Image.open("main.jpg")
-    img = ImageOps.fit(img, (1080, 1350), Image.LANCZOS)
-    bio = io.BytesIO()
-    img.save(bio, format="JPEG")
-    bio.seek(0)
     try:
+        img = Image.open("main.jpg")
+        img = ImageOps.fit(img, (1080, 1350), Image.LANCZOS)
+        bio = io.BytesIO()
+        img.save(bio, format="JPEG")
+        bio.seek(0)
         await update.message.reply_photo(photo=bio, caption=caption, reply_markup=markup)
     except:
         await update.message.reply_text(caption, reply_markup=markup)
+
 async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    # اذا كان جواب سؤال، حوله لدالة الأسئلة
+    if query.data.startswith("quiz_"):
+        await quiz_callback(update, context)
+        return
     await query.answer()
     user = query.from_user
     data = USERS.get(str(user.id), {"points": 0, "coins": 0})
@@ -326,8 +415,8 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
        await query.message.reply_text("📜 القوانين:\n1. كل رسالة = نقطة\n2. كل 50 رسالة = 1 عملة ذهبية\n3. ممنوع السب والشتم\n4. استمتع واصعد للصدارة 👑")
     elif query.data == "soon":
         await query.message.reply_text("🎮 قريبا... استنونا 🔥")
+
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        
     user = update.effective_user
     points, got_coin, rank_up, new_rank = add_points(user.id, 1)
     USERS[str(user.id)]["name"] = user.first_name
@@ -352,9 +441,20 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += f"{emoji} {i}. {name} - {pts} نقطة\n"
     await update.message.reply_text(text)
 
+async def test_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # أمر للتجربة: /سؤال - بينزل سؤال فورا للتجربة
+    global GROUP_CHAT_ID
+    GROUP_CHAT_ID = update.effective_chat.id
+    await send_quiz(context)
+    await update.message.reply_text("تم ارسال سؤال تجريبي 🔥")
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global GROUP_CHAT_ID
     if not update.message or not update.message.text:
         return
+    # تعرف على الجروب تلقائيا
+    if update.effective_chat.type in ["group", "supergroup"]:
+        GROUP_CHAT_ID = update.effective_chat.id
     text = update.message.text
     user = update.effective_user
     lower = text.lower()
@@ -365,51 +465,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if rank_up:
         await update.message.reply_text(f"🎉 مبرووووك! ترقيت لرتبة {new_rank} 👑\nنقاطك: {points}")
     if "احبك" in text or "بحبك" in text or "اعشقك" in text or "بموت فيك" in text:
-        replies_love = [
-            "وأنا بموت فيك يا قلبي ❤️",
-            "القيصر كمان بيحبك، يا روحي 😍",
-            "قلبي داب خلص، شو هالحب هاد؟ ❤️",
-            "وأنا بحبك أكتر، لا تغار 😘",
-            "عيونك الحلوة، القيصر صار أحمر خجلان 🙈❤️",
-            "حبك ولع قلبي يا بطل 🔥❤️",
-            "وأنا بعشقك، بس لا تحكي لحد 🤫❤️",
-            "القيصر وقع بالحب خلص، شو نعمل؟ 😍",
-            "انت حبيبي وروحي وكل دنيتي ❤️",
-            "بحبك قد البحر وقد السما ❤️",
-            "قلبي صار يدق بسرعة، وقف 😂❤️",
-            "وأنا بحبك، تعال خد حضن 🤗❤️",
-            "انت أغلى واحد عند القيصر 👑❤️",
-            "حبك لحاله بيكفي يخليني أطير 😍",
-            "وأنا بموت فيك، لا تتركني ❤️"
-        ]
+        replies_love = ["وأنا بموت فيك يا قلبي ❤️", "القيصر كمان بيحبك، يا روحي 😍", "قلبي داب خلص، شو هالحب هاد؟ ❤️", "وأنا بحبك أكتر، لا تغار 😘", "عيونك الحلوة، القيصر صار أحمر خجلان 🙈❤️", "حبك ولع قلبي يا بطل 🔥❤️", "وأنا بعشقك، بس لا تحكي لحد 🤫❤️", "القيصر وقع بالحب خلص، شو نعمل؟ 😍", "انت حبيبي وروحي وكل دنيتي ❤️", "بحبك قد البحر وقد السما ❤️", "قلبي صار يدق بسرعة، وقف 😂❤️", "وأنا بحبك، تعال خد حضن 🤗❤️", "انت أغلى واحد عند القيصر 👑❤️", "حبك لحاله بيكفي يخليني أطير 😍", "وأنا بموت فيك، لا تتركني ❤️"]
         await update.message.reply_text(random.choice(replies_love))
         return
     if "قيصر" in text or "qaysar" in lower or "qaisar" in lower:
-        replies = [
-            "نعم؟ القيصر موجود 👑",
-            "أمرني يا بطل، القيصر هون 🔥",
-            "هلا هلا، ناديتني؟ 😎",
-            "القيصر سامعك، شو بدك؟",
-            "أنا هون، لا تخاف 😂👑",
-            "نعم نعم، القيصر بالخدمة",
-            "شو في؟ حد نادى القيصر؟ 👀",
-            "أهلين بالبطل، شو الأخبار؟",
-            "القيصر موجود، احكي يا معلم",
-            "عيون القيصر، أمرني",
-            "وصلت وصلت، شو القصة؟ 🔥",
-            "نعم يا ملك، القيصر معك",
-            "هلا والله، نورت يا بطل",
-            "القيصر هون، لا حد يزعج البطل",
-            "سمعت اسمي؟ أنا جاهز 👑",
-            "احكي احكي، القيصر سامعك",
-            "يا هلا، القيصر وصل",
-            "أنا القيصر، مين بده خدمة؟ 😎",
-            "نعم؟ بدك نقاط ولا بدك ذهب؟ 💰",
-            "القيصر لا ينام، أنا هون 😂"
-        ]
+        replies = ["نعم؟ القيصر موجود 👑", "أمرني يا بطل، القيصر هون 🔥", "هلا هلا، ناديتني؟ 😎", "القيصر سامعك، شو بدك؟", "أنا هون، لا تخاف 😂👑", "نعم نعم، القيصر بالخدمة", "شو في؟ حد نادى القيصر؟ 👀", "أهلين بالبطل، شو الأخبار؟", "القيصر موجود، احكي يا معلم", "عيون القيصر، أمرني", "وصلت وصلت، شو القصة؟ 🔥", "نعم يا ملك، القيصر معك", "هلا والله، نورت يا بطل", "القيصر هون، لا حد يزعج البطل", "سمعت اسمي؟ أنا جاهز 👑", "احكي احكي، القيصر سامعك", "يا هلا، القيصر وصل", "أنا القيصر، مين بده خدمة؟ 😎", "نعم؟ بدك نقاط ولا بدك ذهب؟ 💰", "القيصر لا ينام، أنا هون 😂"]
         await update.message.reply_text(random.choice(replies))
         return
-        return
+
 async def is_admin(update, context):
     try:
         member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
@@ -439,18 +502,14 @@ async def mute_user(update, context):
     if not update.message.reply_to_message:
         await update.message.reply_text("رد على رسالة الشخص اللي بدك تكتمه")
         return
-
-    # تشخيص - عشان نشوف حالتك
     try:
         member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
     except Exception as e:
         await update.message.reply_text(f"خطأ بفحص المشرف: {e}")
         return
-
     if member.status not in ["administrator", "creator"]:
         await update.message.reply_text("انت مش مشرف عندي")
         return
-
     target = update.message.reply_to_message.from_user
     try:
         from telegram import ChatPermissions
@@ -458,21 +517,19 @@ async def mute_user(update, context):
         await update.message.reply_text(f"😁 تم كتم {target.first_name}")
     except Exception as e:
         await update.message.reply_text(f"❌ ما قدرت اكتمه، تأكد اني أدمن: {e}")
+
 async def unmute_user(update, context):
     if not update.message.reply_to_message:
         await update.message.reply_text("رد على رسالة الشخص اللي بدك تفك عنه")
         return
-
     try:
         member = await context.bot.get_chat_member(update.effective_chat.id, update.effective_user.id)
     except Exception as e:
         await update.message.reply_text(f"خطأ بفحص المشرف: {e}")
         return
-
     if member.status not in ["administrator", "creator"]:
         await update.message.reply_text("انت مش مشرف عندي")
         return
-
     target = update.message.reply_to_message.from_user
     try:
         from telegram import ChatPermissions
@@ -480,21 +537,12 @@ async def unmute_user(update, context):
         await update.message.reply_text(f"🔊 تم فك كتم {target.first_name}")
     except Exception as e:
         await update.message.reply_text(f"❌ ما قدرت افك عنه: {e}")
+
 def main():
     keep_alive()
     global USERS
     load_users_once()
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.Regex(r"^ترتيب$"), leaderboard))
-    app.add_handler(MessageHandler(filters.Regex("^رصيد$"), balance))
-    app.add_handler(MessageHandler(filters.Regex(r"^طير$"), kick_user))
-    app.add_handler(MessageHandler(filters.Regex(r"^اسكت$"), mute_user))
-    app.add_handler(MessageHandler(filters.Regex(r"^احكي$"), unmute_user))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.add_handler(CallbackQueryHandler(buttons_handler))
-    print("Bot is running...")
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+    app.add_handler(CommandHandler("سؤال", test_quiz))
+    app.add_handler(MessageHandler(filters.Regex(r"^ترتيب$
