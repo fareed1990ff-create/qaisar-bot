@@ -260,8 +260,7 @@ def make_card(name, points, coins, rank):
     return bio
 
 # ===== دوال الأسئلة =====
-
-async def async def finish_after_120(context):
+async def finish_after_120(context):
     await asyncio.sleep(120)
     await finish_quiz(context)
 
