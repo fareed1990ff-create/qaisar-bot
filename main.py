@@ -104,8 +104,8 @@ def load_users_once():
         print(f"Loaded {len(USERS)} users from Supabase")
     except Exception as e:
         print(f"Load error Supabase: {e}")
-        _LOADED_OK = False
-        def save_group_id(chat_id):
+        _LOADED_OK = False 
+def save_group_id(chat_id):
     GROUP_IDS.add(chat_id)
     try:
         supabase_req("settings?on_conflict=key", method="POST", data=[{"key": f"group_{chat_id}", "value": str(chat_id)}])
