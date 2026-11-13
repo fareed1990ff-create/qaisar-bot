@@ -293,7 +293,7 @@ async def send_quiz(context):
         msg = await context.bot.send_message(chat_id=GROUP_CHAT_ID, text=text, reply_markup=markup)
         ACTIVE_QUIZ = {"q_index": q_index, "message_id": msg.message_id, "chat_id": GROUP_CHAT_ID, "answers": {}}
         # جدولة انهاء السؤال بعد 2 دقيقة
-        context.job_queue.run_once(finish_quiz, when=120, data={"q_index": q_index, "message_id": msg.message_id})
+        asyncio.create_task(finish_after_120(context))
         print(f"Quiz sent: {q_index}")
     except Exception as e:
         print(f"Send quiz failed: {e}")
