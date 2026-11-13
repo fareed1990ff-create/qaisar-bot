@@ -260,7 +260,20 @@ def make_card(name, points, coins, rank):
     return bio
 
 # ===== دوال الأسئلة =====
-async def send_quiz(context):
+
+async def async def finish_after_120(context):
+    await asyncio.sleep(120)
+    await finish_quiz(context)
+
+async def quiz_loop(app):
+    await asyncio.sleep(10)
+    while True:
+        try:
+            fake_context = type("C", (), {"bot": app.bot})()
+            await send_quiz(fake_context)
+        except Exception as e:
+            print(f"Quiz loop error: {e}")
+        await asyncio.sleep(7200)(context):
     global ACTIVE_QUIZ, GROUP_CHAT_ID
     if GROUP_CHAT_ID is None:
         print("No group yet, skip quiz")
