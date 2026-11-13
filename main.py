@@ -301,7 +301,10 @@ def make_card(name, points, coins, rank):
 async def finish_after_120(context):
     await asyncio.sleep(120)
     await finish_quiz(context)
-
+    
+async def finish_after_120_for_chat(context, chat_id):
+    await asyncio.sleep(120)
+    await finish_quiz(context, chat_id)
 async def quiz_loop(app):
     await asyncio.sleep(10)
     while True:
@@ -324,7 +327,7 @@ async def send_quiz_for_chat(context, chat_id):
     try:
         msg = await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
         ACTIVE_QUIZZES[chat_id] = {"q_index": q_index, "message_id": msg.message_id, "chat_id": chat_id, "answers": {}}
-        context.job_queue.run_once(lambda c: finish_quiz(c, chat_id), when=120)
+        asyncio.create_task(finish_after_120_for_chat(context, chat_id))
         print(f"Quiz sent: {q_index} to {chat_id}")
     except Exception as e:
         print(f"Send quiz failed {chat_id}: {e}")
@@ -497,10 +500,9 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text)
 
 async def test_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # أمر للتجربة: /سؤال - بينزل سؤال فورا للتجربة
-    global GROUP_CHAT_ID
-    GROUP_CHAT_ID = update.effective_chat.id
-    await send_quiz(context)
+    chat_id = update.effective_chat.id
+    save_group_id(chat_id)
+    await send_quiz_for_chat(context, chat_id)
     await update.message.reply_text("تم ارسال سؤال تجريبي 🔥")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
