@@ -128,7 +128,7 @@ def get_rank_name(points):
     elif points < 5000: return "النخبة"
     elif points < 7000: return "محلل"
     else: return "خبير استراتيجي"
-   def get_money_level(coins):
+def get_money_level(coins):
     if coins == 0:
         return "تحت الأرض 💀"
     elif coins <= 10:
