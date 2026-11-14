@@ -268,10 +268,10 @@ def make_card(name, points, coins, rank):
         font_small = font_big
         font_tiny = font_big
         def center_at(x_center, y, text, font, color):
-        t = str(text)
-        bbox = d.textbbox((0, 0), t, font=font, direction="rtl", language="ar")
-        w = bbox[2] - bbox[0]
-        d.text((x_center - w//2, y), t, font=font, fill=color, direction="rtl", language="ar")
+         t = str(text)
+         bbox = d.textbbox((0, 0), t, font=font, direction="rtl", language="ar")
+         w = bbox[2] - bbox[0]
+         d.text((x_center - w//2, y), t, font=font, fill=color, direction="rtl", language="ar")
     center_at(950, 110, "👑", font_mid, GOLD)
     center_at(950, 180, name, font_big, GOLD)
     center_at(180, 120, f"الترتيب #{rank}", font_mid, GOLD)
