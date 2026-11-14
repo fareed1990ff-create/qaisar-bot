@@ -238,14 +238,10 @@ def add_coins(user_id, amount):
         return USERS[uid]["coins"]
 
 def get_user(user_id):
-    return USERS.get(str(user_id), {"points": 0, "coins": 0, "name": ""})
-
 def make_card(name, points, coins, rank):
     from PIL import Image, ImageDraw, ImageFont
-    import arabic_reshaper
-    from bidi.algorithm import get_display
     def fix(t):
-            return str(t)
+        return str(t)
     rank_name = get_rank_name(points)
     levels = [100, 300, 600, 1000, 1600, 2400, 3600, 5000, 7000, 999999]
     next_points = 100
@@ -254,46 +250,70 @@ def make_card(name, points, coins, rank):
             next_points = lv
             break
     xp = points
-    money = get_money_level(coins)
+    # نشيل الايموجي من المستوى المالي عشان يدخل جوا المربع وما يخرب
+    money_raw = get_money_level(coins)
+    # ناخد بس الكلام العربي بدون ايموجي
+    money = "".join(c for c in money_raw if c.isalpha() or c == " ").strip()
+    if not money:
+        money = "طفران"
+
     try:
         bg = Image.open("card_bg.jpg").convert("RGB").resize((1200, 675))
     except:
         bg = Image.new("RGB", (1200, 675), (20, 0, 40))
     d = ImageDraw.Draw(bg)
-    try: 
+    try:
         import urllib.request
         if not os.path.exists("Amiri-Bold.ttf"):
             urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Bold.ttf", "Amiri-Bold.ttf")
         font_big = ImageFont.truetype("Amiri-Bold.ttf", 68)
-        font_mid = ImageFont.truetype("Amiri-Bold.ttf", 40)
-        font_small = ImageFont.truetype("Amiri-Bold.ttf", 32)
+        font_mid = ImageFont.truetype("Amiri-Bold.ttf", 48)  # كبرناه من 40 لـ 48
+        font_small = ImageFont.truetype("Amiri-Bold.ttf", 38) # كبرناه من 32 لـ 38
         font_num = ImageFont.truetype("DejaVuSans-Bold.ttf", 36)
+        font_coins = ImageFont.truetype("DejaVuSans-Bold.ttf", 78) # خط كبير للرقم
     except:
         font_big = ImageFont.load_default()
         font_mid = font_big
         font_small = font_big
         font_num = font_big
+        font_coins = font_big
+
     GOLD = (255, 215, 100)
     PURPLE = (230, 180, 255)
+    BLACK = (0, 0, 0)
+    WHITE = (255, 255, 255)
+
     def center_at(x, y, text, font, color):
         t = fix(text)
         bbox = d.textbbox((0, 0), t, font=font)
         w = bbox[2] - bbox[0]
-        d.text((x - w/2, y), t, font=font, fill=color)
+        h = bbox[3] - bbox[1]
+        d.text((x - w/2 - bbox[0], y - h/2 - bbox[1]), t, font=font, fill=color)
+
     center_at(1000, 210, name, font_big, GOLD)
     center_at(600, 190, "الرتبة", font_mid, GOLD)
     center_at(600, 250, rank_name, font_big, GOLD)
+
+    # 1 - الترتيب والنقاط وطفران - خط أكبر
     center_at(180, 170, f"الترتيب #{rank}", font_mid, GOLD)
     center_at(180, 230, f"النقاط {points}", font_mid, GOLD)
-    center_at(180, 290, money, font_small, GOLD)
+    center_at(180, 290, money, font_mid, GOLD)
+
     percent = int(points * 100 / next_points) if next_points else 0
     center_at(600, 430, f"{percent}% - {points} / {next_points}", font_num, GOLD)
-    center_at(210, 510, "المستوى المالي", font_small, PURPLE)
-    center_at(210, 555, money, font_mid, PURPLE)
-    center_at(600, 500, "العملات الذهبية", font_small, (80, 50, 0))
-    center_at(600, 550, str(coins), font_big, (80, 50, 0))
-    center_at(990, 510, "الخبرة العسكرية", font_small, PURPLE)
-    center_at(990, 555, f"{xp} XP", font_mid, PURPLE)
+
+    # 2 - المستوى المالي - دخلناه جوا المربع، طلعناه لفوق شوي وصغرنا خطه عشان ما يطلع برا
+    center_at(210, 505, "المستوى المالي", font_small, PURPLE)
+    center_at(210, 552, money, font_small, PURPLE)
+
+    # 3 - العملات الذهبية - غيرنا اللون لأسود قوي وكبرنا الرقم عشان يبين على الذهبي
+    center_at(600, 500, "العملات الذهبية", font_small, BLACK)
+    center_at(600, 552, str(coins), font_coins, BLACK)
+
+    # 4 - الخبرة العسكرية - شلنا 174 XP وحطينا قريبا بنص المربع
+    center_at(990, 505, "الخبرة العسكرية", font_small, PURPLE)
+    center_at(990, 552, "قريبا", font_mid, WHITE)
+
     bg.save("card.png")
     return "card.png"
 
