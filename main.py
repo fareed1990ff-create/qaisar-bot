@@ -237,7 +237,6 @@ def add_coins(user_id, amount):
         save_one_user(user_id)
         return USERS[uid]["coins"]
 
-def get_user(user_id):
 def make_card(name, points, coins, rank):
     from PIL import Image, ImageDraw, ImageFont
     def fix(t):
