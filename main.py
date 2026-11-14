@@ -240,17 +240,26 @@ def add_coins(user_id, amount):
 def get_user(user_id):
     return USERS.get(str(user_id), {"points": 0, "coins": 0, "name": ""})
 
-def make_card(name, rank, points, coins, xp, rank_name, next_points):
+def make_card(name, points, coins, rank):
     from PIL import Image, ImageDraw, ImageFont
     import arabic_reshaper
     from bidi.algorithm import get_display
-
     def fix(t):
         return get_display(arabic_reshaper.reshape(str(t)))
-
-    bg = Image.open("card_bg.jpg").convert("RGB").resize((1200, 675))
+    rank_name = get_rank_name(points)
+    levels = [100, 300, 600, 1000, 1600, 2400, 3600, 5000, 7000, 999999]
+    next_points = 100
+    for lv in levels:
+        if points < lv:
+            next_points = lv
+            break
+    xp = points
+    money = get_money_level(coins)
+    try:
+        bg = Image.open("card_bg.jpg").convert("RGB").resize((1200, 675))
+    except:
+        bg = Image.new("RGB", (1200, 675), (20, 0, 40))
     d = ImageDraw.Draw(bg)
-
     try:
         font_big = ImageFont.truetype("Amiri-Bold.ttf", 68)
         font_mid = ImageFont.truetype("Amiri-Bold.ttf", 40)
@@ -261,45 +270,27 @@ def make_card(name, rank, points, coins, xp, rank_name, next_points):
         font_mid = font_big
         font_small = font_big
         font_num = font_big
-
     GOLD = (255, 215, 100)
-    WHITE = (255, 255, 255)
     PURPLE = (230, 180, 255)
-
     def center_at(x, y, text, font, color):
         t = fix(text)
         bbox = d.textbbox((0, 0), t, font=font)
         w = bbox[2] - bbox[0]
         d.text((x - w/2, y), t, font=font, fill=color)
-
-    # الاسم - تحت التاج يمين
     center_at(1000, 210, name, font_big, GOLD)
-
-    # الرتبة - جوا الدرع بالنص
     center_at(600, 190, "الرتبة", font_mid, GOLD)
     center_at(600, 250, rank_name, font_big, GOLD)
-
-    # اليسار
     center_at(180, 170, f"الترتيب #{rank}", font_mid, GOLD)
     center_at(180, 230, f"النقاط {points}", font_mid, GOLD)
-    center_at(180, 290, "المستوى المالي طفران", font_small, GOLD)
-
-    # شريط التقدم
+    center_at(180, 290, money, font_small, GOLD)
     percent = int(points * 100 / next_points) if next_points else 0
     center_at(600, 430, f"{percent}% - {points} / {next_points}", font_num, GOLD)
-
-    # الصندوق البنفسجي يسار تحت
     center_at(210, 510, "المستوى المالي", font_small, PURPLE)
-    center_at(210, 555, "طفران", font_mid, PURPLE)
-
-    # الصندوق الذهبي نص تحت
+    center_at(210, 555, money, font_mid, PURPLE)
     center_at(600, 500, "العملات الذهبية", font_small, (80, 50, 0))
     center_at(600, 550, str(coins), font_big, (80, 50, 0))
-
-    # الصندوق البنفسجي يمين تحت
     center_at(990, 510, "الخبرة العسكرية", font_small, PURPLE)
     center_at(990, 555, f"{xp} XP", font_mid, PURPLE)
-
     bg.save("card.png")
     return "card.png"
 
