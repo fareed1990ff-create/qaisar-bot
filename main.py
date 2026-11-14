@@ -447,7 +447,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("➕ ضيفنا لقناتك ✨", url="https://t.me/QaisarNewBot?startgroup=true"), InlineKeyboardButton("📢 القناة الرسمية 🔥", url="https://t.me/QaisarBotOfficial")],
     ]
     markup = InlineKeyboardMarkup(keyboard)
-    caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!"
+        caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!\n\n👀 أنت الزائر رقم #{len(USERS)}\n👥 عدد أبطال المملكة: {len(USERS)} بطل"
     try:
         img = Image.open("main.jpg")
         img = ImageOps.fit(img, (1080, 1350), Image.LANCZOS)
@@ -711,6 +711,17 @@ async def weekly_leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE)
     text += "\n👑 الفائز كل جمعة 8 المسا بياخد 10 عملات ذهبية 🪙"
     await update.message.reply_text(text)
 
+async def visitors_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    total = len(USERS)
+    sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:5]
+    text = f"👀 عداد زوار مملكة القيصر 👑\n\n👥 العدد الكلي: {total} زائر\n\n🏆 أكثر 5 أبطال تفاعلاً:\n"
+    for i, (uid, udata) in enumerate(sorted_users, 1):
+        nm = udata.get("name", "بطل") or "بطل"
+        emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else "▫️"
+        text += f"{emoji} {i}. {nm} - {udata.get('points', 0)} نقطة\n"
+    text += f"\n🔥 أنت الزائر رقم #{total}، ادعي صحابك يكبروا المملكة!"
+    await update.message.reply_text(text)
+
 def main():
     keep_alive()
     global USERS
@@ -726,6 +737,8 @@ def main():
     h5 = MessageHandler(filters.Regex(r"^(/احكي|احكي)$"), unmute_user)
     h7 = MessageHandler(filters.Regex(r"^(نقاطي|/نقاطي)$"), weekly_points)
     h8 = MessageHandler(filters.Regex(r"^(بطل الأسبوع|/بطل)$"), weekly_leaderboard)
+    h9 = MessageHandler(filters.Regex(r"^(الزوار|/زوار|عداد الزوار)$"), visitors_count) 
+    app.add_handler(h9)
     app.add_handler(h1)
     app.add_handler(h2)
     app.add_handler(h3)
