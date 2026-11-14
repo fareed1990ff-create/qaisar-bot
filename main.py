@@ -245,58 +245,6 @@ def get_user(user_id):
     return USERS.get(str(user_id), {"points": 0, "coins": 0, "name": ""})
 
 def make_card(name, points, coins, rank):
-    W, H = 1200, 820
-    img = Image.new("RGB", (W, H), (15, 10, 5))
-    d = ImageDraw.Draw(img)
-    d.rectangle([20, 20, W-20, H-20], outline=(212, 175, 55), width=5)
-    if points < 100: rank_name = "عضو جديد"
-    elif points < 300: rank_name = "مبتدئ"
-    elif points < 600: rank_name = "بطل"
-    elif points < 1000: rank_name = "نجم صاعد"
-    elif points < 1600: rank_name = "محارب ذهبي"
-    elif points < 2400: rank_name = "قائد"
-    elif points < 3600: rank_name = "أسطورة"
-    elif points < 5000: rank_name = "النخبة"
-    elif points < 7000: rank_name = "محلل"
-    else: rank_name = "خبير استراتيجي"
-    money_level = get_money_level(coins)
-    try:
-        import urllib.request
-        if not os.path.exists("Amiri-Regular.ttf"):
-            urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Regular.ttf", "Amiri-Regular.ttf")
-        font_big = ImageFont.truetype("Amiri-Regular.ttf", 70)
-        font_mid = ImageFont.truetype("Amiri-Regular.ttf", 45)
-        font_small = ImageFont.truetype("Amiri-Regular.ttf", 38)
-    except:
-        font_big = ImageFont.load_default()
-        font_mid = font_big
-        font_small = font_big
-    def center(y, text, font, color=(255, 255, 255)):
-        t = str(text)
-        bbox = d.textbbox((0, 0), t, font=font)
-        w = bbox[2] - bbox[0]
-        d.text(((W - w) // 2, y), t, font=font, fill=color)
-    def center_at(x_center, y, text, font, color):
-        t = str(text)
-        bbox = d.textbbox((0, 0), t, font=font)
-        w = bbox[2] - bbox[0]
-        d.text((x_center - w//2, y), t, font=font, fill=color)
-    center(50, name, font_big, (212, 175, 55))
-    center_at(250, 200, "النقاط", font_mid, (200, 200, 200))
-    center_at(250, 260, str(points), font_big, (90, 180, 255))
-    center_at(600, 200, "الرتبة", font_mid, (200, 200, 200))
-    center_at(600, 235, rank_name, font_big, (190, 140, 255))
-    center_at(950, 200, "الترتيب", font_mid, (200, 200, 200))
-    center_at(950, 260, f"#{rank}", font_big, (212, 175, 55))
-    limits = [0, 100, 300, 600, 1000, 1600, 2400, 3600, 5000, 7000]
-    cur_limit = 0
-    next_limit = 100
-    for i, lim in enumerate(limits):
-        if points >= lim:
-            cur_limit = lim
-            if i + 1 < len(limits):
-                next_limit = limits[i+1]
-            else:
 def make_card(name, points, coins, rank):
     W, H = 1200, 675
     img = Image.new("RGB", (W, H), (10, 10, 15))
@@ -309,16 +257,7 @@ def make_card(name, points, coins, rank):
     GREY = (180, 180, 180)
     d.rectangle([10, 10, W-10, H-10], outline=GOLD, width=4)
     d.rectangle([22, 22, W-22, H-22], outline=GOLD, width=2)
-    if points < 100: rank_name = "عضو جديد"
-    elif points < 300: rank_name = "مبتدئ"
-    elif points < 600: rank_name = "بطل"
-    elif points < 1000: rank_name = "نجم صاعد"
-    elif points < 1600: rank_name = "محارب ذهبي"
-    elif points < 2400: rank_name = "قائد"
-    elif points < 3600: rank_name = "أسطورة"
-    elif points < 5000: rank_name = "النخبة"
-    elif points < 7000: rank_name = "محلل"
-    else: rank_name = "خبير استراتيجي"
+    rank_name = get_rank_name(points)
     money_level = get_money_level(coins)
     try:
         if not os.path.exists("Amiri-Regular.ttf"):
@@ -361,7 +300,20 @@ def make_card(name, points, coins, rank):
     d.rounded_rectangle([bar_x1, bar_y1, bar_x2, bar_y2], radius=17, fill=(45, 35, 10), outline=GOLD, width=3)
     fill_w = int((bar_x2 - bar_x1) * percent / 100)
     if fill_w > 10:
-        d.rounded_rectangle([bar_x1+3, bar_y1+3, bar_x1
+        d.rounded_rectangle([bar_x1+3, bar_y1+3, bar_x1+fill_w, bar_y2-3], radius=14, fill=GOLD_LIGHT)
+    d.rounded_rectangle([60, 470, 360, 600], radius=20, fill=DARK_PURPLE, outline=PURPLE, width=3)
+    center_at(210, 485, "المستوى المالي", font_tiny, (200, 150, 255))
+    center_at(210, 530, money_level, font_small, WHITE)
+    d.rounded_rectangle([400, 460, 800, 610], radius=20, fill=(180, 140, 20), outline=GOLD_LIGHT, width=5)
+    center_at(600, 475, f"العملات الذهبية {coins}", font_mid, (0, 0, 0))
+    center_at(600, 540, "🪙🪙🪙", font_small, (0, 0, 0))
+    d.rounded_rectangle([840, 470, 1140, 600], radius=20, fill=(30, 30, 30), outline=(100, 100, 100), width=3)
+    center_at(990, 485, "الخبرة العسكرية", font_tiny, GREY)
+    center_at(990, 530, "🔒 قريبا", font_small, GOLD_LIGHT)
+    bio = io.BytesIO()
+    img.save(bio, format="PNG")
+    bio.seek(0)
+    return bio
 
 # ===== دوال الأسئلة =====
 async def finish_after_120(context):
