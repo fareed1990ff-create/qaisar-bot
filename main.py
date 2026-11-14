@@ -245,7 +245,7 @@ def make_card(name, points, coins, rank):
     import arabic_reshaper
     from bidi.algorithm import get_display
     def fix(t):
-        return get_display(arabic_reshaper.reshape(str(t)))
+            return str(t)
     rank_name = get_rank_name(points)
     levels = [100, 300, 600, 1000, 1600, 2400, 3600, 5000, 7000, 999999]
     next_points = 100
