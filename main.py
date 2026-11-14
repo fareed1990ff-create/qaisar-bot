@@ -214,7 +214,7 @@ def add_points(user_id, amount):
         u["msg_count"] += 1
         
         new_rank = get_rank_name(u["points"])
-        WEEKLY[str(uid)] = WEEKLY.get(str(uid), 0) + 1
+        WEEKLY[str(uid)] = WEEKLY.get(str(uid), 0) + amount
         rank_up = new_rank != old_rank
         got_coin = False
         if u["msg_count"] >= 50:
@@ -670,6 +670,11 @@ async def announce_weekly_hero(context):
             print(f"Hero announce failed {chat_id}: {e}")
     # تصفير الأسبوع
     WEEKLY.clear()
+    try:
+        supabase_req("users?weekly_points=gt.0", method="PATCH", data={"weekly_points": 0})
+        print("Weekly reset in Supabase OK")
+    except Exception as e:
+        print(f"Reset weekly error: {e}")
 
 async def weekly_hero_loop(app):
     global HERO_JOB_STARTED
