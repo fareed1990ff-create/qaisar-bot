@@ -95,10 +95,11 @@ def supabase_req(path, method="GET", data=None):
         return json.loads(txt) if txt else []
 
 def load_users_once():
-    global USERS, _LOADED_OK
+    global USERS, _LOADED_OK, WEEKLY
     try:
         rows = supabase_req("users?select=*")
         USERS = {}
+        WEEKLY = {}
         for row in rows:
             uid = str(row.get("user_id"))
             USERS[uid] = {"points": row.get("points", 0) or 0, "name": row.get("name", "") or "", "coins": row.get("coins", 0) or 0, "msg_count": row.get("msg_count", 0) or 0}
