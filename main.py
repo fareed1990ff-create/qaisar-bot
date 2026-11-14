@@ -455,7 +455,7 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         real_rank = get_real_rank(user.id)
         card = make_card(user.first_name, points, coins, real_rank)
         with open(card, "rb") as f:
-    await query.message.reply_photo(photo=f, caption=f"رصيدك: {points} نقطة | {coins} عملة 🪙")
+          await query.message.reply_photo(photo=f, caption=f"رصيدك: {points} نقطة | {coins} عملة 🪙")
     elif query.data == "leaderboard":
         sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:10]
         text = "🏆 ترتيب الأبطال:\n\n"
