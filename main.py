@@ -236,10 +236,11 @@ def add_coins(user_id, amount):
         USERS[uid]["coins"] += amount
         save_one_user(user_id)
         return USERS[uid]["coins"]
+from PIL import Image, ImageDraw, ImageFont
+import os
+import urllib.request
 
-    def make_card(name, points, coins, rank):
-    from PIL import Image, ImageDraw, ImageFont
-
+def make_card(name, points, coins, rank):
     def fix(t):
         return str(t)
 
@@ -261,7 +262,6 @@ def add_coins(user_id, amount):
         bg = Image.new("RGB", (1200, 675), (20, 0, 40))
     d = ImageDraw.Draw(bg)
     try:
-        import urllib.request
         if not os.path.exists("Amiri-Bold.ttf"):
             urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Bold.ttf", "Amiri-Bold.ttf")
         font_big = ImageFont.truetype("Amiri-Bold.ttf", 68)
@@ -301,7 +301,26 @@ def add_coins(user_id, amount):
 
     center_at(1000, 210, name, font_big, GOLD)
     center_at(600, 165, "الرتبة", font_mid, GOLD)
-    center_at(600, 225, rank_name, font_big,
+    center_at(600, 225, rank_name, font_big, GOLD)
+
+    center_at(180, 170, f"الترتيب #{rank}", font_mid, GOLD)
+    center_at(180, 230, f"النقاط {points}", font_mid, BLUE)
+    center_at(180, 290, money, font_mid, GOLD)
+
+    percent = int(points * 100 / next_points) if next_points else 0
+    center_at(600, 430, f"{percent}% - {points} / {next_points}", font_num, GOLD)
+
+    center_fixed(225, 500, "المستوى المالي", font_small, PURPLE)
+    center_fixed(225, 545, money, font_small, PURPLE)
+
+    center_at(600, 485, "العملات الذهبية", font_small, BLACK)
+    center_at_big_coins(600, 525, str(coins))
+
+    center_fixed(970, 500, "الخبرة العسكرية", font_small, PURPLE)
+    center_fixed(970, 545, "قريبا", font_mid, WHITE)
+
+    bg.save("card.png")
+    return "card.png"
 
 # ===== دوال الأسئلة =====
 async def finish_after_120(context):
