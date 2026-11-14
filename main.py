@@ -149,6 +149,13 @@ def save_one_user(uid):
     except Exception as e:
         print(f"Save one error: {e}")
 
+def save_weekly_only(uid):
+    try:
+        wp = WEEKLY.get(str(uid), 0)
+        supabase_req(f"users?user_id=eq.{uid}", method="PATCH", data={"weekly_points": int(wp)})
+    except Exception as e:
+        print(f"Save weekly error: {e}")
+
 def get_rank_name(points):
     if points < 100: return "عضو جديد"
     elif points < 300: return "مبتدئ"
@@ -540,6 +547,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     lower = text.lower()
     points, got_coin, rank_up, new_rank = add_points(user.id, 1)
+        save_weekly_only(user.id)
     USERS[str(user.id)]["name"] = user.first_name
     if got_coin:
         await update.message.reply_text(f"🪙 مبروووك! أخذت 1 عملة ذهبية - نقاطك: {points}")
