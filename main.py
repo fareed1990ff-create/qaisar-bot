@@ -144,7 +144,7 @@ def save_one_user(uid):
         u = USERS.get(str(uid))
         if not u:
             return
-        data = {"user_id": str(uid), "points": int(u.get("points", 0)), "name": str(u.get("name", "")), "coins": int(u.get("coins", 0)), "msg_count": int(u.get("msg_count", 0))}
+        data = {"user_id": str(uid), "points": int(u.get("points", 0)), "name": str(u.get("name", "")), "coins": int(u.get("coins", 0)), "msg_count": int(u.get("msg_count", 0)), "weekly_points": int(WEEKLY.get(str(uid), 0))}
         supabase_req("users?on_conflict=user_id", method="POST", data=[data])
     except Exception as e:
         print(f"Save one error: {e}")
