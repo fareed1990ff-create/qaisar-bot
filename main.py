@@ -437,14 +437,17 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     USERS[str(user.id)]["name"] = user.first_name
     data = USERS.get(str(user.id), {"points": 0, "coins": 0, "name": user.first_name})
     coins = data.get("coins", 0)
-    sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)
-    rank = 1
-    for uid, udata in sorted_users:
-        if uid == str(user.id):
-            break
-        rank += 1
-    card = make_card(user.first_name, points, coins, rank)
-    await update.message.reply_photo(photo=card, caption=f"👑 بطاقتك يا {user.first_name}")
+    rank_name = get_rank_name(points)
+    money_level = get_money_level(coins)
+    real_rank = get_real_rank(user.id)
+    text = (
+        f"<b>🪙 الرصيد:</b> {coins} عملة ذهبية\n"
+        f"<b>💰 الحالة المادية:</b> {money_level}\n"
+        f"<b>🏆 الرتبة:</b> {rank_name}\n"
+        f"<b>⭐ النقاط:</b> {points} نقطة\n"
+        f"<b>📊 الترتيب:</b> #{real_rank}"
+    )
+    await update.message.reply_text(text, parse_mode="HTML")
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:10]
