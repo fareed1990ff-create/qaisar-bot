@@ -240,7 +240,6 @@ def add_coins(user_id, amount):
 def get_user(user_id):
     return USERS.get(str(user_id), {"points": 0, "coins": 0, "name": ""})
 
-def make_card(name, points, coins, rank):
 def make_card(name, rank, points, coins, xp, rank_name, next_points):
     from PIL import Image, ImageDraw, ImageFont
     import arabic_reshaper
