@@ -501,7 +501,7 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
         emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else "▫️"
         text += f"{emoji} {i}. {name} - {pts} نقطة\n"
     with open(card, "rb") as f:
-    await update.message.reply_photo(photo=f, caption=f"👑 بطاقتك يا {user.first_name}")
+       await update.message.reply_photo(photo=f, caption=f"👑 بطاقتك يا {user.first_name}")
 
 async def test_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
