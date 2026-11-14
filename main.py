@@ -103,6 +103,9 @@ def load_users_once():
         for row in rows:
             uid = str(row.get("user_id"))
             USERS[uid] = {"points": row.get("points", 0) or 0, "name": row.get("name", "") or "", "coins": row.get("coins", 0) or 0, "msg_count": row.get("msg_count", 0) or 0}
+            wp = row.get("weekly_points", 0) or 0
+            if wp > 0:
+                WEEKLY[uid] = int(wp)
         _LOADED_OK = True
         print(f"Loaded {len(USERS)} users from Supabase")
     except Exception as e:
