@@ -243,6 +243,10 @@ import urllib.request
 from PIL import Image, ImageDraw, ImageFont
 import os
 import urllib.request
+ 
+from PIL import Image, ImageDraw, ImageFont
+import os
+import urllib.request
 
 def make_card(name, points, coins, rank):
     def fix(t):
@@ -292,9 +296,6 @@ def make_card(name, points, coins, rank):
         w = bbox[2] - bbox[0]
         d.text((x - w/2, y), t, font=font, fill=color)
 
-    def center_fixed(x, y, text, font, color):
-        d.text((x, y), fix(text), font=font, fill=color, anchor="ma")
-
     def center_at_big_coins(x, y, text):
         t = str(text)
         bbox = d.textbbox((0, 0), t, font=font_coins, stroke_width=4)
@@ -304,8 +305,8 @@ def make_card(name, points, coins, rank):
         d.text((px, y), t, font=font_coins, fill=(255, 255, 255), stroke_width=4, stroke_fill=(0, 0, 0))
 
     center_at(1000, 210, name, font_big, GOLD)
-    center_at(600, 145, "الرتبة", font_mid, GOLD)
-    center_at(600, 200, rank_name, font_big, GOLD)
+    center_at(600, 130, "الرتبة", font_mid, GOLD)
+    center_at(600, 185, rank_name, font_big, GOLD)
 
     center_at(180, 170, f"الترتيب #{rank}", font_mid, GOLD)
     center_at(180, 230, f"النقاط {points}", font_mid, BLUE)
@@ -314,14 +315,14 @@ def make_card(name, points, coins, rank):
     percent = int(points * 100 / next_points) if next_points else 0
     center_at(600, 410, f"{percent}% - {points} / {next_points}", font_num, GOLD)
 
-    center_fixed(260, 500, "المستوى المالي", font_small, PURPLE)
-    center_fixed(260, 545, money, font_small, PURPLE)
+    center_at(260, 495, "المستوى المالي", font_small, PURPLE)
+    center_at(260, 535, money, font_small, PURPLE)
 
     center_at(600, 475, "العملات الذهبية", font_small, BLACK)
     center_at_big_coins(600, 500, str(coins))
 
-    center_fixed(950, 500, "الخبرة العسكرية", font_small, PURPLE)
-    center_fixed(950, 545, "قريبا", font_mid, WHITE)
+    center_at(950, 495, "الخبرة العسكرية", font_small, PURPLE)
+    center_at(950, 535, "قريبا", font_mid, WHITE)
 
     bg.save("card.png")
     return "card.png"
