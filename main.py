@@ -237,7 +237,7 @@ def add_coins(user_id, amount):
         save_one_user(user_id)
         return USERS[uid]["coins"]
 
-def make_card(name, points, coins, rank):
+    def make_card(name, points, coins, rank):
     from PIL import Image, ImageDraw, ImageFont
 
     def fix(t):
@@ -268,7 +268,6 @@ def make_card(name, points, coins, rank):
         font_mid = ImageFont.truetype("Amiri-Bold.ttf", 48)
         font_small = ImageFont.truetype("Amiri-Bold.ttf", 34)
         font_num = ImageFont.truetype("DejaVuSans-Bold.ttf", 36)
-        # رقم العملات صار ضخم 115 بدل 78
         font_coins = ImageFont.truetype("DejaVuSans-Bold.ttf", 115)
     except:
         font_big = ImageFont.load_default()
@@ -289,42 +288,20 @@ def make_card(name, points, coins, rank):
         w = bbox[2] - bbox[0]
         d.text((x - w/2, y), t, font=font, fill=color)
 
+    def center_fixed(x, y, text, font, color):
+        d.text((x, y), fix(text), font=font, fill=color, anchor="ma")
+
     def center_at_big_coins(x, y, text):
-        # رقم مميز: أبيض بحافة سوداء + ظل
         t = str(text)
         bbox = d.textbbox((0, 0), t, font=font_coins, stroke_width=4)
         w = bbox[2] - bbox[0]
         px = x - w/2
-        # ظل أسود
         d.text((px+4, y+4), t, font=font_coins, fill=(0, 0, 0), stroke_width=4, stroke_fill=(0, 0, 0))
-        # الرقم نفسه أبيض بحافة سوداء عريضة
         d.text((px, y), t, font=font_coins, fill=(255, 255, 255), stroke_width=4, stroke_fill=(0, 0, 0))
 
     center_at(1000, 210, name, font_big, GOLD)
-    center_at(600, 190, "الرتبة", font_mid, GOLD)
-    center_at(600, 250, rank_name, font_big, GOLD)
-
-    center_at(180, 170, f"الترتيب #{rank}", font_mid, GOLD)
-    center_at(180, 230, f"النقاط {points}", font_mid, BLUE)
-    center_at(180, 290, money, font_mid, GOLD)
-
-    percent = int(points * 100 / next_points) if next_points else 0
-    center_at(600, 430, f"{percent}% - {points} / {next_points}", font_num, GOLD)
-
-    # المستوى المالي
-    center_at(240, 500, "المستوى المالي", font_small, PURPLE)
-    center_at(240, 545, money, font_small, PURPLE)
-
-    # العملات الذهبية - الكلمة صغيرة فوق، والرقم ضخم تحتها
-    center_at(600, 485, "العملات الذهبية", font_small, BLACK)
-    center_at_big_coins(600, 525, str(coins))
-
-    # الخبرة العسكرية
-    center_at(970, 500, "الخبرة العسكرية", font_small, PURPLE)
-    center_at(970, 545, "قريبا", font_mid, WHITE)
-
-    bg.save("card.png")
-    return "card.png"
+    center_at(600, 165, "الرتبة", font_mid, GOLD)
+    center_at(600, 225, rank_name, font_big,
 
 # ===== دوال الأسئلة =====
 async def finish_after_120(context):
