@@ -447,7 +447,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("➕ ضيفنا لقناتك ✨", url="https://t.me/QaisarNewBot?startgroup=true"), InlineKeyboardButton("📢 القناة الرسمية 🔥", url="https://t.me/QaisarBotOfficial")],
     ]
     markup = InlineKeyboardMarkup(keyboard)
-        caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!\n\n👀 أنت الزائر رقم #{len(USERS)}\n👥 عدد أبطال المملكة: {len(USERS)} بطل"
+    caption = f"👑 أهلين فيك يا {user.first_name} 🔥\nنورت مملكة القيصر!\n\n👀 أنت الزائر رقم #{len(USERS)}\n👥 عدد أبطال المملكة: {len(USERS)} بطل"
     try:
         img = Image.open("main.jpg")
         img = ImageOps.fit(img, (1080, 1350), Image.LANCZOS)
