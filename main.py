@@ -454,7 +454,8 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == "balance":
         real_rank = get_real_rank(user.id)
         card = make_card(user.first_name, points, coins, real_rank)
-        await query.message.reply_photo(photo=card, caption=f"رصيدك: {points} نقطة | {coins} عملة 🪙")
+        with open(card, "rb") as f:
+    await query.message.reply_photo(photo=f, caption=f"رصيدك: {points} نقطة | {coins} عملة 🪙")
     elif query.data == "leaderboard":
         sorted_users = sorted(USERS.items(), key=lambda x: x[1].get("points", 0), reverse=True)[:10]
         text = "🏆 ترتيب الأبطال:\n\n"
@@ -499,7 +500,8 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pts = data.get("points", 0)
         emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else "▫️"
         text += f"{emoji} {i}. {name} - {pts} نقطة\n"
-    await update.message.reply_text(text)
+    with open(card, "rb") as f:
+    await update.message.reply_photo(photo=f, caption=f"👑 بطاقتك يا {user.first_name}")
 
 async def test_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -641,8 +643,8 @@ async def announce_weekly_hero(context):
     for chat_id in list(GROUP_IDS):
         try:
             if card:
-                card.seek(0)
-                await context.bot.send_photo(chat_id=chat_id, photo=card, caption=caption)
+              with open(card, "rb") as f:
+                await context.bot.send_photo(chat_id=chat_id, photo=f, caption=caption)
             else:
                 await context.bot.send_message(chat_id=chat_id, text=caption)
         except Exception as e:
