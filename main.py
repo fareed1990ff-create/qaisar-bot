@@ -267,7 +267,7 @@ def make_card(name, points, coins, rank):
         font_mid = font_big
         font_small = font_big
         font_tiny = font_big
-def center_at(x_center, y, text, font, color):
+    def center_at(x_center, y, text, font, color):
          t = str(text)
          bbox = d.textbbox((0, 0), t, font=font, direction="rtl", language="ar")
          w = bbox[2] - bbox[0]
