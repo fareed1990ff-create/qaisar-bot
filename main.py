@@ -260,7 +260,10 @@ def make_card(name, points, coins, rank):
     except:
         bg = Image.new("RGB", (1200, 675), (20, 0, 40))
     d = ImageDraw.Draw(bg)
-    try:
+    try: 
+        import urllib.request
+        if not os.path.exists("Amiri-Bold.ttf"):
+            urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Bold.ttf", "Amiri-Bold.ttf")
         font_big = ImageFont.truetype("Amiri-Bold.ttf", 68)
         font_mid = ImageFont.truetype("Amiri-Bold.ttf", 40)
         font_small = ImageFont.truetype("Amiri-Bold.ttf", 32)
