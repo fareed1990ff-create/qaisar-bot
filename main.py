@@ -241,74 +241,68 @@ def get_user(user_id):
     return USERS.get(str(user_id), {"points": 0, "coins": 0, "name": ""})
 
 def make_card(name, points, coins, rank):
-    W, H = 1200, 675
-    img = Image.new("RGB", (W, H), (10, 10, 15))
-    d = ImageDraw.Draw(img)
-    GOLD = (212, 175, 55)
-    GOLD_LIGHT = (255, 215, 0)
-    PURPLE = (138, 43, 226)
-    DARK_PURPLE = (38, 10, 55)
-    WHITE = (255, 255, 255)
-    GREY = (180, 180, 180)
-    d.rectangle([10, 10, W-10, H-10], outline=GOLD, width=4)
-    d.rectangle([22, 22, W-22, H-22], outline=GOLD, width=2)
-    rank_name = get_rank_name(points)
-    money_level = get_money_level(coins)
+def make_card(name, rank, points, coins, xp, rank_name, next_points):
+    from PIL import Image, ImageDraw, ImageFont
+    import arabic_reshaper
+    from bidi.algorithm import get_display
+
+    def fix(t):
+        return get_display(arabic_reshaper.reshape(str(t)))
+
+    bg = Image.open("card_bg.jpg").convert("RGB").resize((1200, 675))
+    d = ImageDraw.Draw(bg)
+
     try:
-        if not os.path.exists("Amiri-Regular.ttf"):
-            import urllib.request
-            urllib.request.urlretrieve("https://github.com/google/fonts/raw/main/ofl/amiri/Amiri-Regular.ttf", "Amiri-Regular.ttf")
-        font_big = ImageFont.truetype("Amiri-Regular.ttf", 68)
-        font_mid = ImageFont.truetype("Amiri-Regular.ttf", 42)
-        font_small = ImageFont.truetype("Amiri-Regular.ttf", 34)
-        font_tiny = ImageFont.truetype("Amiri-Regular.ttf", 30)
+        font_big = ImageFont.truetype("Amiri-Bold.ttf", 68)
+        font_mid = ImageFont.truetype("Amiri-Bold.ttf", 40)
+        font_small = ImageFont.truetype("Amiri-Bold.ttf", 32)
+        font_num = ImageFont.truetype("DejaVuSans-Bold.ttf", 36)
     except:
         font_big = ImageFont.load_default()
         font_mid = font_big
         font_small = font_big
-        font_tiny = font_big
-    def center_at(x_center, y, text, font, color):
-         t = str(text)
-         bbox = d.textbbox((0, 0), t, font=font, direction="rtl", language="ar")
-         w = bbox[2] - bbox[0]
-         d.text((x_center - w//2, y), t, font=font, fill=color, direction="rtl", language="ar")
-    center_at(950, 110, "👑", font_mid, GOLD)
-    center_at(950, 180, name, font_big, GOLD)
-    center_at(180, 120, f"الترتيب #{rank}", font_mid, GOLD)
-    center_at(180, 190, f"النقاط {points}", font_mid, GOLD)
-    d.rounded_rectangle([480, 60, 720, 300], radius=35, fill=DARK_PURPLE, outline=GOLD, width=4)
-    center_at(600, 80, "⭐", font_mid, GOLD_LIGHT)
-    center_at(600, 140, "الرتبة", font_small, GOLD)
-    center_at(600, 200, rank_name, font_mid, GOLD_LIGHT)
-    limits = [0, 100, 300, 600, 1000, 1600, 2400, 3600, 5000, 7000]
-    cur_limit = 0
-    next_limit = 100
-    for i, lim in enumerate(limits):
-        if points >= lim:
-            cur_limit = lim
-            next_limit = limits[i+1] if i+1 < len(limits) else lim
-        else:
-            break
-    percent = 100 if points >= 7000 else int((points - cur_limit) / (next_limit - cur_limit) * 100)
-    center_at(600, 330, f"{percent}%  -  {points} / {next_limit}", font_small, WHITE)
-    bar_x1, bar_y1, bar_x2, bar_y2 = 250, 385, 950, 420
-    d.rounded_rectangle([bar_x1, bar_y1, bar_x2, bar_y2], radius=17, fill=(45, 35, 10), outline=GOLD, width=3)
-    fill_w = int((bar_x2 - bar_x1) * percent / 100)
-    if fill_w > 10:
-        d.rounded_rectangle([bar_x1+3, bar_y1+3, bar_x1+fill_w, bar_y2-3], radius=14, fill=GOLD_LIGHT)
-    d.rounded_rectangle([60, 470, 360, 600], radius=20, fill=DARK_PURPLE, outline=PURPLE, width=3)
-    center_at(210, 485, "المستوى المالي", font_tiny, (200, 150, 255))
-    center_at(210, 530, money_level, font_small, WHITE)
-    d.rounded_rectangle([400, 460, 800, 610], radius=20, fill=(180, 140, 20), outline=GOLD_LIGHT, width=5)
-    center_at(600, 475, f"العملات الذهبية {coins}", font_mid, (0, 0, 0))
-    center_at(600, 540, "🪙🪙🪙", font_small, (0, 0, 0))
-    d.rounded_rectangle([840, 470, 1140, 600], radius=20, fill=(30, 30, 30), outline=(100, 100, 100), width=3)
-    center_at(990, 485, "الخبرة العسكرية", font_tiny, GREY)
-    center_at(990, 530, "🔒 قريبا", font_small, GOLD_LIGHT)
-    bio = io.BytesIO()
-    img.save(bio, format="PNG")
-    bio.seek(0)
-    return bio
+        font_num = font_big
+
+    GOLD = (255, 215, 100)
+    WHITE = (255, 255, 255)
+    PURPLE = (230, 180, 255)
+
+    def center_at(x, y, text, font, color):
+        t = fix(text)
+        bbox = d.textbbox((0, 0), t, font=font)
+        w = bbox[2] - bbox[0]
+        d.text((x - w/2, y), t, font=font, fill=color)
+
+    # الاسم - تحت التاج يمين
+    center_at(1000, 210, name, font_big, GOLD)
+
+    # الرتبة - جوا الدرع بالنص
+    center_at(600, 190, "الرتبة", font_mid, GOLD)
+    center_at(600, 250, rank_name, font_big, GOLD)
+
+    # اليسار
+    center_at(180, 170, f"الترتيب #{rank}", font_mid, GOLD)
+    center_at(180, 230, f"النقاط {points}", font_mid, GOLD)
+    center_at(180, 290, "المستوى المالي طفران", font_small, GOLD)
+
+    # شريط التقدم
+    percent = int(points * 100 / next_points) if next_points else 0
+    center_at(600, 430, f"{percent}% - {points} / {next_points}", font_num, GOLD)
+
+    # الصندوق البنفسجي يسار تحت
+    center_at(210, 510, "المستوى المالي", font_small, PURPLE)
+    center_at(210, 555, "طفران", font_mid, PURPLE)
+
+    # الصندوق الذهبي نص تحت
+    center_at(600, 500, "العملات الذهبية", font_small, (80, 50, 0))
+    center_at(600, 550, str(coins), font_big, (80, 50, 0))
+
+    # الصندوق البنفسجي يمين تحت
+    center_at(990, 510, "الخبرة العسكرية", font_small, PURPLE)
+    center_at(990, 555, f"{xp} XP", font_mid, PURPLE)
+
+    bg.save("card.png")
+    return "card.png"
 
 # ===== دوال الأسئلة =====
 async def finish_after_120(context):
