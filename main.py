@@ -245,7 +245,6 @@ def get_user(user_id):
     return USERS.get(str(user_id), {"points": 0, "coins": 0, "name": ""})
 
 def make_card(name, points, coins, rank):
-def make_card(name, points, coins, rank):
     W, H = 1200, 675
     img = Image.new("RGB", (W, H), (10, 10, 15))
     d = ImageDraw.Draw(img)
