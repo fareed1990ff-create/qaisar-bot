@@ -945,7 +945,17 @@ async def update_poll_message(context, chat_id):
     try:
         await context.bot.edit_message_text(chat_id=chat_id, message_id=POLL_MESSAGES[chat_id], text=new_text, reply_markup=InlineKeyboardMarkup(keyboard))
     except Exception as e:
-        print(f"Update poll failed: {e}")
+       print(f"Update poll failed: {e}")
+
+async def vote_callback(update, context):
+    query = update.callback_query
+    ans = "ah" if query.data == "vote_ah" else "la"
+    chat_id = query.message.chat.id
+    save_group_id(chat_id)
+    PREDICTIONS[query.from_user.id] = {"name": query.from_user.first_name, "ans": ans}
+    word = "آه بتوقع ✅" if ans == "ah" else "لا ما بتوقع ❌"
+    await query.answer(f"تم تسجيل توقعك: {word}")
+    await update_poll_message(context, chat_id)
 def main():
     keep_alive()
     global USERS
