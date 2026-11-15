@@ -769,7 +769,7 @@ async def cmd_attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         def_w["war_points"] += 10
         save_war(attacker.id); save_war(defender.id)
         await update.message.reply_text(f"⚔️ هجوووم!\n\n🛡️ {defender.first_name} صد الهجوم ودمر 30% من جيش {attacker.first_name}!\n🏆 {defender.first_name} +10 نقطة حرب")
-        def war_power(uid):
+def war_power(uid):
     w = get_war(uid)
     total = 0
     for k, count in w["army"].items():
