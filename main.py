@@ -46,7 +46,21 @@ GROUP_IDS = set()
 ACTIVE_QUIZZES = {}
 WEEKLY = {}
 HERO_JOB_STARTED = False
+# ===== نظام التوقعات اليومي - ايران =====
+PREDICTIONS = {}  # user_id -> {"name":..., "ans": "ah" / "la"}
+POLL_MESSAGES = {}  # chat_id -> message_id
+POLL_BASE_TEXT = """🎯 توقع اليوم - 8 مساءً
 
+هل تتوقع تجدد الحرب الليلة على أيران ؟!
+
+━━━━━━━━━━━━━━
+🗳️ كيف تصوت؟
+
+اكبس على الزر تحت 👇
+✅ آه بتوقع
+❌ لا ما بتوقع
+
+اللي بتوقع صح بياخد +10 نقاط 🏆"""
 FUNNY_MESSAGES = [
     "😂 يا {name} شكلك كنت تحلل وانت نايم!",
     "😂 {name} تحليلك راح فيها، روح نام وارجع!",
