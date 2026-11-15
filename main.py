@@ -596,6 +596,7 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def post_init(a):
     asyncio.create_task(quiz_loop(a))
     asyncio.create_task(weekly_hero_loop(a))
+    asyncio.create_task(prediction_loop(a))
 # ===== بطل الأسبوع =====
 async def announce_weekly_hero(context):
     if not WEEKLY:
