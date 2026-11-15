@@ -973,6 +973,12 @@ async def prediction_loop(app):
         except Exception as e:
             print(f"Prediction loop error: {e}")
         await asyncio.sleep(600)
+async def test_prediction(update, context):
+    chat_id = update.effective_chat.id
+    save_group_id(chat_id)
+    await send_daily_prediction(context)
+    await update.message.reply_text("تم ارسال سؤال التوقع التجريبي 🔥")
+
 def main():
     keep_alive()
     global USERS
@@ -984,6 +990,7 @@ def main():
     app.add_handler(CommandHandler("harb", cmd_harb))
     app.add_handler(CommandHandler("attack", cmd_attack))
     app.add_handler(CommandHandler("sual", test_quiz))
+    app.add_handler(CommandHandler("tawaqa_test", test_prediction))
     h1 = MessageHandler(filters.Regex(r"^(ترتيب|/ترتيب|/top)$"), leaderboard)
     h2 = MessageHandler(filters.Regex(r"^(رصيد|رصيدي|/رصيد|/balance)$"), balance)
     h3 = MessageHandler(filters.Regex(r"^(/طير|طير)$"), kick_user)
