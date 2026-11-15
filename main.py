@@ -397,6 +397,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     # اذا كان جواب سؤال، حوله لدالة الأسئلة
+        if query.data.startswith("war_"):
+        await war_callback(update, context)
+        return
     if query.data.startswith("quiz_"):
         await quiz_callback(update, context)
         return
@@ -668,7 +671,99 @@ async def visitors_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += f"{emoji} {i}. {nm} - {udata.get('points', 0)} نقطة\n"
     text += f"\n🔥 أنت الزائر رقم #{total}، ادعي صحابك يكبروا المملكة!"
     await update.message.reply_text(text)
+# ===== ===== نظام الحرب - أزرار + خاص فقط ===== =====
+import time as _time
 
+WAR = {}
+
+BUILDINGS = {
+    "oil_factory": {"name": "🛢️ مصنع نفط", "cost": 50, "prod": "oil", "prod_per_lvl": 5},
+    "iron_mine": {"name": "⛏️ منجم حديد", "cost": 50, "prod": "iron", "prod_per_lvl": 5},
+    "farm": {"name": "🌾 مزرعة", "cost": 40, "prod": "wheat", "prod_per_lvl": 8},
+    "barracks": {"name": "🏛️ ثكنة عسكرية", "cost": 80, "prod": None, "prod_per_lvl": 0},
+    "airbase": {"name": "✈️ قاعدة جوية", "cost": 100, "prod": None, "prod_per_lvl": 0},
+    "weapon_factory": {"name": "🎯 مصنع أسلحة", "cost": 90, "prod": None, "prod_per_lvl": 0},
+    "wall": {"name": "🧱 سور المدينة", "cost": 60, "prod": None, "prod_per_lvl": 0},
+    "warehouse": {"name": "📦 مخزن", "cost": 60, "prod": None, "prod_per_lvl": 0},
+    "hq": {"name": "🏰 مقر القيادة", "cost": 100, "prod": None, "prod_per_lvl": 0},
+}
+
+ARMY = {
+    "soldier": {"name": "🪖 جندي", "cost_gold": 1, "cost_wheat": 1, "power": 10},
+    "tank": {"name": "🚜 دبابة", "cost_gold": 10, "cost_iron": 5, "power": 50},
+    "cannon": {"name": "💣 مدفع", "cost_gold": 15, "cost_iron": 8, "power": 70},
+    "plane": {"name": "✈️ طائرة", "cost_gold": 25, "cost_iron": 10, "cost_oil": 5, "power": 120},
+    "missile": {"name": "🚀 صاروخ", "cost_gold": 40, "cost_iron": 15, "cost_oil": 10, "power": 200},
+    "defense": {"name": "🛡️ دفاع جوي", "cost_gold": 20, "cost_iron": 10, "power": 0},
+}
+
+def get_war(uid):
+    uid = str(uid)
+    if uid not in WAR:
+        WAR[uid] = {"oil": 0, "iron": 0, "wheat": 0, "buildings": {k: 0 for k in BUILDINGS}, "army": {k: 0 for k in ARMY}, "war_points": 0, "last_collect": int(_time.time())}
+        WAR[uid]["buildings"]["hq"] = 1
+    return WAR[uid]
+
+def save_war(uid):
+    try:
+        w = get_war(uid)
+        supabase_req("war_users?on_conflict=user_id", method="POST", data=[{
+            "user_id": str(uid), "oil": int(w["oil"]), "iron": int(w["iron"]), "wheat": int(w["wheat"]),
+            "buildings": w["buildings"], "army": w["army"], "war_points": int(w["war_points"]), "last_collect": int(w["last_collect"])
+        }])
+    except Exception as e:
+        print(f"Save war error: {e}")
+
+def load_war():
+    global WAR
+    try:
+        rows = supabase_req("war_users?select=*")
+        for r in rows:
+            WAR[str(r["user_id"])]
+
+async def cmd_attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type == "private":
+        await update.message.reply_text("❌ الهجوم بس بالجروب، رد على رسالة خصمك واكتب /هجوم")
+        return
+    if not update.message.reply_to_message:
+        await update.message.reply_text("❌ رد على رسالة الشخص اللي بدك تهجم عليه واكتب /هجوم")
+        return
+    attacker = update.effective_user
+    defender = update.message.reply_to_message.from_user
+    if attacker.id == defender.id:
+        await update.message.reply_text("😂 بدك تهجم على حالك؟")
+        return
+    atk_power = war_power(attacker.id)
+    def_power = war_power(defender.id)
+    def_w = get_war(defender.id)
+    def_power = int(def_power * (1 + def_w["buildings"].get("wall",0)*0.08))
+    if atk_power == 0:
+        await update.message.reply_text("❌ ما عندك جيش! اكتب /حرب واشتري جيش من المتجر بالخاص")
+        return
+    import random as _rnd
+    atk_roll = atk_power * _rnd.uniform(0.8, 1.3)
+    def_roll = def_power * _rnd.uniform(0.8, 1.3)
+    if atk_roll > def_roll:
+        atk_w = get_war(attacker.id)
+        steal_oil = int(def_w["oil"] * 0.2)
+        steal_iron = int(def_w["iron"] * 0.2)
+        steal_wheat = int(def_w["wheat"] * 0.2)
+        atk_w["oil"] += steal_oil; atk_w["iron"] += steal_iron; atk_w["wheat"] += steal_wheat
+        def_w["oil"] -= steal_oil; def_w["iron"] -= steal_iron; def_w["wheat"] -= steal_wheat
+        for k in def_w["army"]:
+            def_w["army"][k] = int(def_w["army"][k] * 0.8)
+        for k in atk_w["army"]:
+            atk_w["army"][k] = int(atk_w["army"][k] * 0.9)
+        atk_w["war_points"] += 20
+        save_war(attacker.id); save_war(defender.id)
+        await update.message.reply_text(f"⚔️ هجوووم!\n\n🔥 {attacker.first_name} فاز على {defender.first_name}!\n💰 سرق: 🛢️ {steal_oil} | ⛏️ {steal_iron} | 🌾 {steal_wheat}\n💥 دمر 20% من جيشو\n🏆 +20 نقطة حرب")
+    else:
+        atk_w = get_war(attacker.id)
+        for k in atk_w["army"]:
+            atk_w["army"][k] = int(atk_w["army"][k] * 0.7)
+        def_w["war_points"] += 10
+        save_war(attacker.id); save_war(defender.id)
+        await update.message.reply_text(f"⚔️ هجوووم!\n\n🛡️ {defender.first_name} صد الهجوم ودمر 30% من جيش {attacker.first_name}!\n🏆 {defender.first_name} +10 نقطة حرب")
 def main():
     keep_alive()
     global USERS
