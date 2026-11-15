@@ -397,7 +397,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     # اذا كان جواب سؤال، حوله لدالة الأسئلة
-        if query.data.startswith("war_"):
+    if query.data.startswith("war_"):
         await war_callback(update, context)
         return
     if query.data.startswith("quiz_"):
