@@ -1012,7 +1012,7 @@ async def natija_command(update, context):
     await update.message.reply_text(text)
     PREDICTIONS.clear()
 
-def main()
+def main():
     keep_alive()
     global USERS
     load_users_once()
