@@ -959,6 +959,19 @@ async def vote_callback(update, context):
     word = "آه بتوقع ✅" if ans == "ah" else "لا ما بتوقع ❌"
     await query.answer(f"تم تسجيل توقعك: {word}")
     await update_poll_message(context, chat_id)
+
+async def prediction_loop(app):
+    while True:
+        try:
+            now = datetime.datetime.now(ZoneInfo("Asia/Hebron"))
+            # الساعة 8 المسا كل يوم
+            if now.hour == 20 and now.minute < 10:
+                fake_context = type("C", (), {"bot": app.bot})()
+                await send_daily_prediction(fake_context)
+                await asyncio.sleep(3600)
+        except Exception as e:
+            print(f"Prediction loop error: {e}")
+        await asyncio.sleep(600)
 def main():
     keep_alive()
     global USERS
