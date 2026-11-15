@@ -769,6 +769,7 @@ def main():
     global USERS
     load_users_once()
     load_group_ids()
+    load_war()
     app = Application.builder().token(TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("sual", test_quiz))
