@@ -419,6 +419,9 @@ async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data.startswith("quiz_"):
         await quiz_callback(update, context)
         return
+    if query.data.startswith("vote_"):
+        await vote_callback(update, context)
+        return
     await query.answer()
     user = query.from_user
     data = USERS.get(str(user.id), {"points": 0, "coins": 0})
