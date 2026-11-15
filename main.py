@@ -719,7 +719,12 @@ def load_war():
     try:
         rows = supabase_req("war_users?select=*")
         for r in rows:
-            WAR[str(r["user_id"])]
+            WAR[str(r["user_id"])] = {"oil": r.get("oil",0) or 0, "iron": r.get("iron",0) or 0, "wheat": r.get("wheat",0) or 0,
+                "buildings": r.get("buildings") or {k:0 for k in BUILDINGS}, "army": r.get("army") or {k:0 for k in ARMY},
+                "war_points": r.get("war_points",0) or 0, "last_collect": r.get("last_collect",0) or 0}
+        print(f"Loaded war {len(WAR)}")
+    except Exception as e:
+        print(f"Load war error: {e}")
 
 async def cmd_attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == "private":
