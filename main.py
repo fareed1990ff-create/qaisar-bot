@@ -769,6 +769,122 @@ async def cmd_attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         def_w["war_points"] += 10
         save_war(attacker.id); save_war(defender.id)
         await update.message.reply_text(f"⚔️ هجوووم!\n\n🛡️ {defender.first_name} صد الهجوم ودمر 30% من جيش {attacker.first_name}!\n🏆 {defender.first_name} +10 نقطة حرب")
+        def war_power(uid):
+    w = get_war(uid)
+    total = 0
+    for k, count in w["army"].items():
+        total += ARMY[k]["power"] * count
+    return total
+
+async def war_callback(update, context):
+    query = update.callback_query
+    await query.answer()
+    user = query.from_user
+    uid = str(user.id)
+    w = get_war(uid)
+    data = query.data
+
+    # زر الرجوع للقائمة الرئيسية
+    if data == "war_back":
+        text = (f"⚔️ <b>إمبراطورية الحرب</b>\n\n"
+                f"👤 {user.first_name}\n"
+                f"🏆 نقاط حرب: {w['war_points']}\n\n"
+                f"🛢️ نفط: {w['oil']} | 🔩 حديد: {w['iron']} | 🌾 قمح: {w['wheat']}\n\n"
+                f"🏗️ مباني: {sum(w['buildings'].values())} | 🪖 جنود: {sum(w['army'].values())}")
+        kb = [[InlineKeyboardButton("🏗️ مباني", callback_data="war_buildings"),
+               InlineKeyboardButton("🪖 جيش", callback_data="war_army")],
+              [InlineKeyboardButton("🎁 جمع الموارد", callback_data="war_collect"),
+               InlineKeyboardButton("🏆 ترتيب الحرب", callback_data="war_top")]]
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+        return
+
+    # قائمة المباني
+    if data == "war_buildings":
+        text = f"🏗️ <b>مبانيك</b>\n\n🪙 معك: {USERS.get(uid, {}).get('coins', 0)} عملة\n\nاضغط على مبنى لشرائه:\n"
+        kb = []
+        for key, b in BUILDINGS.items():
+            lvl = w["buildings"].get(key, 0)
+            kb.append([InlineKeyboardButton(f"{b['name']} - Lv {lvl} | {b['cost']} 🪙", callback_data=f"war_buy_{key}")])
+        kb.append([InlineKeyboardButton("🔙 رجوع", callback_data="war_back")])
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+        return
+
+    # قائمة الجيش
+    if data == "war_army":
+        text = f"🪖 <b>جيشك - القوة: {war_power(uid)}</b>\n\n🪙 عملات: {USERS.get(uid, {}).get('coins', 0)} | 🛢️ {w['oil']} | 🔩 {w['iron']} | 🌾 {w['wheat']}\n\nاضغط لشراء:"
+        kb = []
+        for key, a in ARMY.items():
+            cnt = w["army"].get(key, 0)
+            kb.append([InlineKeyboardButton(f"{a['name']} - عندك {cnt} | {a.get('cost_gold',0)} 🪙 قوة {a['power']}", callback_data=f"war_buyarmy_{key}")])
+        kb.append([InlineKeyboardButton("🔙 رجوع", callback_data="war_back")])
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+        return
+
+    # جمع الموارد
+    if data == "war_collect":
+        now = int(_time.time())
+        passed = now - w["last_collect"]
+        if passed < 60:
+            await query.answer(f"استنى {60-passed} ثانية!", show_alert=True)
+            return
+        gain_oil = w["buildings"].get("oil_factory",0) * 5 + 5
+        gain_iron = w["buildings"].get("iron_mine",0) * 5 + 5
+        gain_wheat = w["buildings"].get("farm",0) * 8 + 10
+        w["oil"] += gain_oil; w["iron"] += gain_iron; w["wheat"] += gain_wheat
+        w["last_collect"] = now
+        save_war(uid)
+        await query.answer(f"تم الجمع! +{gain_oil} نفط +{gain_iron} حديد +{gain_wheat} قمح", show_alert=True)
+        return
+
+    # ترتيب الحرب
+    if data == "war_top":
+        sorted_war = sorted(WAR.items(), key=lambda x: x[1].get("war_points",0), reverse=True)[:10]
+        text = "🏆 <b>ترتيب الحرب:</b>\n\n"
+        for i, (uid2, wd) in enumerate(sorted_war, 1):
+            nm = USERS.get(uid2, {}).get("name", "بطل")
+            text += f"{i}. {nm} - {wd.get('war_points',0)} نقطة | قوة {war_power(uid2)}\n"
+        if not sorted_war:
+            text += "لسا ما حد لعب!"
+        kb = [[InlineKeyboardButton("🔙 رجوع", callback_data="war_back")]]
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+        return
+
+    # شراء مبنى
+    if data.startswith("war_buy_"):
+        key = data.replace("war_buy_", "")
+        b = BUILDINGS.get(key)
+        if not b:
+            return
+        coins = USERS.get(uid, {}).get("coins", 0)
+        if coins < b["cost"]:
+            await query.answer(f"ما معك عملات كفاية! بدك {b['cost']} ومعك {coins}", show_alert=True)
+            return
+        USERS[uid]["coins"] -= b["cost"]
+        w["buildings"][key] = w["buildings"].get(key, 0) + 1
+        save_one_user(uid); save_war(uid)
+        await query.answer(f"تم شراء {b['name']} بنجاح! 🔥", show_alert=True)
+        return
+
+    # شراء جندي
+    if data.startswith("war_buyarmy_"):
+        key = data.replace("war_buyarmy_", "")
+        a = ARMY.get(key)
+        if not a:
+            return
+        coins = USERS.get(uid, {}).get("coins", 0)
+        need_gold = a.get("cost_gold", 0)
+        need_oil = a.get("cost_oil", 0)
+        need_iron = a.get("cost_iron", 0)
+        need_wheat = a.get("cost_wheat", 0)
+        if coins < need_gold or w["oil"] < need_oil or w["iron"] < need_iron or w["wheat"] < need_wheat:
+            await query.answer("مواردك ما بتكفي! اجمع موارد أول", show_alert=True)
+            return
+        USERS[uid]["coins"] -= need_gold
+        w["oil"] -= need_oil; w["iron"] -= need_iron; w["wheat"] -= need_wheat
+        w["army"][key] = w["army"].get(key, 0) + 1
+        save_one_user(uid); save_war(uid)
+        await query.answer(f"تم شراء {a['name']}! 🪖", show_alert=True)
+        return
 async def cmd_harb(update, context):
     uid = str(update.effective_user.id)
     d = get_war(uid)
