@@ -979,7 +979,40 @@ async def test_prediction(update, context):
     await send_daily_prediction(context)
     await update.message.reply_text("تم ارسال سؤال التوقع التجريبي 🔥")
 
-def main():
+async def natija_command(update, context):
+    if not context.args:
+        await update.message.reply_text("اكتب: /natija ah  أو  /natija la")
+        return
+    correct = context.args[0].lower()
+    if correct not in ["ah", "la"]:
+        await update.message.reply_text("اكتب ah أو la بس")
+        return
+    if not PREDICTIONS:
+        await update.message.reply_text("ما في توقعات اليوم")
+        return
+    
+    winners = []
+    losers = []
+    for uid, data in PREDICTIONS.items():
+        if data["ans"] == correct:
+            winners.append(data["name"])
+            # هون بنضيف النقاط - إذا عندك دالة نقاط غيرها قلي
+            try:
+                add_points(uid, data["name"], 10)
+            except:
+                pass
+        else:
+            losers.append(data["name"])
+    
+    word = "آه - تجددت الحرب ✅" if correct == "ah" else "لا - ما تجددت الحرب ❌"
+    text = f"🏁 نتيجة التوقع: {word}\n\n🏆 اللي توقعوا صح (+10 نقاط):\n"
+    text += "\n".join([f"• {n}" for n in winners]) if winners else "ما حدا توقع صح 😅"
+    text += f"\n\n😢 اللي توقعوا غلط:\n"
+    text += "\n".join([f"• {n}" for n in losers]) if losers else "ما حدا"
+    await update.message.reply_text(text)
+    PREDICTIONS.clear()
+
+def main()
     keep_alive()
     global USERS
     load_users_once()
@@ -991,6 +1024,7 @@ def main():
     app.add_handler(CommandHandler("attack", cmd_attack))
     app.add_handler(CommandHandler("sual", test_quiz))
     app.add_handler(CommandHandler("tawaqa_test", test_prediction))
+    app.add_handler(CommandHandler("natija", natija_command))
     h1 = MessageHandler(filters.Regex(r"^(ترتيب|/ترتيب|/top)$"), leaderboard)
     h2 = MessageHandler(filters.Regex(r"^(رصيد|رصيدي|/رصيد|/balance)$"), balance)
     h3 = MessageHandler(filters.Regex(r"^(/طير|طير)$"), kick_user)
