@@ -769,7 +769,7 @@ async def cmd_attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         def_w["war_points"] += 10
         save_war(attacker.id); save_war(defender.id)
         await update.message.reply_text(f"⚔️ هجوووم!\n\n🛡️ {defender.first_name} صد الهجوم ودمر 30% من جيش {attacker.first_name}!\n🏆 {defender.first_name} +10 نقطة حرب")
-        async def cmd_harb(update, context):
+async def cmd_harb(update, context):
     uid = str(update.effective_user.id)
     d = get_war(uid)
     text = (f"⚔️ <b>إمبراطورية الحرب</b>\n\n"
