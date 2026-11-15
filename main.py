@@ -914,6 +914,38 @@ async def cmd_harb(update, context):
           [InlineKeyboardButton("🎁 جمع الموارد", callback_data="war_collect"),
            InlineKeyboardButton("🏆 ترتيب الحرب", callback_data="war_top")]]
     await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+    
+    # ===== دالة التوقع اليومي =====
+async def send_daily_prediction(context):
+    PREDICTIONS.clear()
+    keyboard = [[
+        InlineKeyboardButton("✅ آه بتوقع", callback_data="vote_ah"),
+        InlineKeyboardButton("❌ لا ما بتوقع", callback_data="vote_la"),
+    ]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    text = POLL_BASE_TEXT + "\n\n📊 التصويت الحالي:\n✅ آه: 0\n❌ لا: 0\n👥 مجموع: 0"
+    for gid in list(GROUP_IDS):
+        try:
+            msg = await context.bot.send_message(chat_id=gid, text=text, reply_markup=reply_markup)
+            POLL_MESSAGES[gid] = msg.message_id
+        except Exception as e:
+            print(f"Prediction send failed {gid}: {e}")
+
+async def update_poll_message(context, chat_id):
+    if chat_id not in POLL_MESSAGES:
+        return
+    ah = sum(1 for v in PREDICTIONS.values() if v["ans"] == "ah")
+    la = sum(1 for v in PREDICTIONS.values() if v["ans"] == "la")
+    total = ah + la
+    new_text = POLL_BASE_TEXT + f"\n\n📊 التصويت الحالي:\n✅ آه: {ah}\n❌ لا: {la}\n👥 مجموع: {total}"
+    keyboard = [[
+        InlineKeyboardButton(f"✅ آه ({ah})", callback_data="vote_ah"),
+        InlineKeyboardButton(f"❌ لا ({la})", callback_data="vote_la"),
+    ]]
+    try:
+        await context.bot.edit_message_text(chat_id=chat_id, message_id=POLL_MESSAGES[chat_id], text=new_text, reply_markup=InlineKeyboardMarkup(keyboard))
+    except Exception as e:
+        print(f"Update poll failed: {e}")
 def main():
     keep_alive()
     global USERS
