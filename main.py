@@ -769,6 +769,19 @@ async def cmd_attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         def_w["war_points"] += 10
         save_war(attacker.id); save_war(defender.id)
         await update.message.reply_text(f"⚔️ هجوووم!\n\n🛡️ {defender.first_name} صد الهجوم ودمر 30% من جيش {attacker.first_name}!\n🏆 {defender.first_name} +10 نقطة حرب")
+        async def cmd_harb(update, context):
+    uid = str(update.effective_user.id)
+    d = get_war(uid)
+    text = (f"⚔️ <b>إمبراطورية الحرب</b>\n\n"
+            f"👤 {update.effective_user.first_name}\n"
+            f"🏆 نقاط حرب: {d['war_points']}\n\n"
+            f"🛢️ نفط: {d['oil']} | 🔩 حديد: {d['iron']} | 🌾 قمح: {d['wheat']}\n\n"
+            f"🏗️ مباني: {sum(d['buildings'].values())} | 🪖 جنود: {sum(d['army'].values())}")
+    kb = [[InlineKeyboardButton("🏗️ مباني", callback_data="war_buildings"),
+           InlineKeyboardButton("🪖 جيش", callback_data="war_army")],
+          [InlineKeyboardButton("🎁 جمع الموارد", callback_data="war_collect"),
+           InlineKeyboardButton("🏆 ترتيب الحرب", callback_data="war_top")]]
+    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
 def main():
     keep_alive()
     global USERS
