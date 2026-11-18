@@ -520,6 +520,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+        if query.data.startswith("senario_"):
+        await senario_callback(update, context)
+        return
     # اذا كان جواب سؤال، حوله لدالة الأسئلة
     if query.data.startswith("war_"):
         await war_callback(update, context)
@@ -705,6 +708,7 @@ async def post_init(a):
     asyncio.create_task(quiz_loop(a))
     asyncio.create_task(weekly_hero_loop(a))
     asyncio.create_task(prediction_loop(a))
+    asyncio.create_task(senario_loop(a))
 # ===== بطل الأسبوع =====
 async def announce_weekly_hero(context):
     if not WEEKLY:
@@ -1135,6 +1139,91 @@ def make_card(name, points, coins, rank):
         print(f"Card error: {e}")
         return "main.jpg"
 
+# ===== مولد سيناريو حرب عشوائي - شغال لحاله =====
+import random as _rnd2
+
+SCENARIO_ENEMIES = [
+    "300 درون انتحاري", "50 دبابة", "20 طائرة مقاتلة", "100 صاروخ باليستي",
+    "10 غواصات", "500 جندي قوات خاصة", "30 راجمة صواريخ", "15 مروحية هجومية",
+    "200 صاروخ كروز", "40 مدرعة", "سرب درونات FPV", "3 فرق مشاة كاملة",
+]
+SCENARIO_TARGETS = [
+    "مصفاة نفط", "قاعدة جوية", "مخزن ذخيرة", "ميناء عسكري",
+    "جسر استراتيجي", "مقر قيادة", "محطة كهرباء", "مطار مدني",
+    "مخزن وقود", "رتل عسكري", "مدينة حدودية", "رادار إنذار مبكر",
+]
+SCENARIO_WEATHER = [
+    "الجو عاصف ومطر", "الجو صافي تماماً", "ضباب كثيف", "الجو ليلي وحالك",
+    "عاصفة رملية", "الجو حار جداً 45 درجة", "ثلج وبرد قارس", "الجو مغيم",
+]
+SCENARIO_STATUS = [
+    "دفاعك ناقص 50%", "دفاعك كامل 100%", "ما عندك غطاء جوي",
+    "ذخيرتك رح تخلص بعد ساعة", "قواتك تعبانة من 3 أيام قتال",
+    "عندك دعم جوي جاهز", "راداراتك معطلة", "عندك 10 دقائق بس تتصرف",
+]
+SCENARIO_DECISIONS = [
+    ["انسحب فوراً واحمي القوات", "اضرب بالصواريخ قبل ما يوصلوا", "شغل التشويش الإلكتروني", "اطلب دعم جوي عاجل"],
+    ["افخخ الطريق واعمل كمين", "وزع القوات وشتتها", "اهجم هجوم مضاد مفاجئ", "احتمي بالأنفاق واستنى"],
+    ["اقصف مقر قيادتهم أول", "اقطع الإمدادات عنهم", "فاوض واكسب وقت", "فجر الجسر وامنع تقدمهم"],
+]
+
+ACTIVE_SENARIO = {}
+SCENARIO_COUNT = [0]
+
+def build_random_scenario():
+    enemy = _rnd2.choice(SCENARIO_ENEMIES)
+    target = _rnd2.choice(SCENARIO_TARGETS)
+    weather = _rnd2.choice(SCENARIO_WEATHER)
+    status = _rnd2.choice(SCENARIO_STATUS)
+    decisions = _rnd2.choice(SCENARIO_DECISIONS)
+    SCENARIO_COUNT[0] += 1
+    return {"num": SCENARIO_COUNT[0], "enemy": enemy, "target": target, "weather": weather, "status": status, "decisions": decisions}
+
+async def send_scenario_for_chat(context, chat_id):
+    if chat_id in ACTIVE_SENARIO:
+        return
+    s = build_random_scenario()
+    labels = ["أ", "ب", "ج", "د"]
+    options_text = "".join([f"{labels[i]} - {opt}\n" for i, opt in enumerate(s["decisions"])])
+    keyboard = [[InlineKeyboardButton(f"{labels[i]} - {opt}", callback_data=f"senario_{s['num']}_{i}")] for i, opt in enumerate(s["decisions"])]
+    text = f"⚔️ سيناريو حرب #{s['num']} ⚔️\n\n🚨 العدو هجم بـ {s['enemy']} على {s['target']}!\n\n🌦️ {s['weather']}\n🛡️ وضعك: {s['status']}\n\n🧠 شو أول قرار بتاخده يا قائد؟\n\n{options_text}\n⏳ معك 2 دقيقة!\n🏆 أكثر قرار اختاروه الناس = القرار الفائز\n🪙 اللي صوت = +1 نقطة"
+    try:
+        msg = await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=InlineKeyboardMarkup(keyboard))
+        ACTIVE_SENARIO[chat_id] = {"num": s["num"], "msg_id": msg.message_id, "scenario": s, "votes": {}}
+        asyncio.create_task(finish_scenario_after(context, chat_id))
+    except Exception as e:
+        print(f"Senario failed: {e}")
+
+async def finish_scenario_after(context, chat_id):
+    await asyncio.sleep(120)
+    await finish_scenario(context, chat_id)
+
+async def finish_scenario(context, chat_id):
+    data = ACTIVE_SENARIO.get(chat_id)
+    if not data:
+        return
+    s = data["scenario"]
+    labels = ["أ", "ب", "ج", "د"]
+    try:
+        await context.bot.edit_message_reply_markup(chat_id=chat_id, message_id=data["msg_id"], reply_markup=None)
+    except:
+        pass
+    counts = [0,0,0,0]
+    for uid, (choice, name) in data["votes"].items():
+        counts[choice] += 1
+    max_votes = max(counts) if counts else 0
+    winner_idx = counts.index(max_votes) if max_votes > 0 else 0
+    winners_text = ""
+    for uid, (choice, name) in data["votes"].items():
+        if choice == winner_idx and max_votes > 0:
+            try:
+                new_coins = add_coins(int(uid), 2)
+                winners_text += f"🏆 {name} - قرارك كان قرار الأغلبية! +2 عملة (صار معو {new_coins})\n"
+            except:
+                winners_text += f"🏆 {name} - قرارك كان قرار الأغلبية!\n"
+    if not winners_text:
+        winners_text = "😅 ما حد صوت هالمرة
+
 def main():
     keep_alive()
     global USERS
@@ -1149,6 +1238,7 @@ def main():
     app.add_handler(CommandHandler("tawaqa_test", test_prediction))
     app.add_handler(CommandHandler("natija", natija_command))
     app.add_handler(CommandHandler("stats", quiz_stats_cmd))
+    app.add_handler(CommandHandler("senario", cmd_senario))
     h1 = MessageHandler(filters.Regex(r"^(ترتيب|/ترتيب|/top)$"), leaderboard)
     h2 = MessageHandler(filters.Regex(r"^(رصيد|رصيدي|/رصيد|/balance)$"), balance)
     h3 = MessageHandler(filters.Regex(r"^(/طير|طير)$"), kick_user)
