@@ -1276,6 +1276,17 @@ async def senario_loop(app):
             print(f"Senario loop error: {e}")
         await asyncio.sleep(21600)
 
+async def fix_tag(update, context):
+    user = update.effective_user
+    chat_id = update.effective_chat.id
+    points = USERS.get(str(user.id), {}).get("points", 0)
+    rank = get_rank_name(points)
+    ok = await update_user_tag(context, chat_id, user.id, rank)
+    if ok:
+        await update.message.reply_text(f"تم ✅ وسمك هسا صار: {rank}\nشوف اسمك بالجروب")
+    else:
+        await update.message.reply_text(f"فشل الوسم ❌\nالرتبة: {rank}\nابعثلي سكرين للوج بالـ Render")
+
 def main():
     keep_alive()
     global USERS
@@ -1291,6 +1302,7 @@ def main():
     app.add_handler(CommandHandler("natija", natija_command))
     app.add_handler(CommandHandler("stats", quiz_stats_cmd))
     app.add_handler(CommandHandler("senario", cmd_senario))
+    app.add_handler(CommandHandler("وسمي", fix_tag))
     h1 = MessageHandler(filters.Regex(r"^(ترتيب|/ترتيب|/top)$"), leaderboard)
     h2 = MessageHandler(filters.Regex(r"^(رصيد|رصيدي|/رصيد|/balance)$"), balance)
     h3 = MessageHandler(filters.Regex(r"^(/طير|طير)$"), kick_user)
