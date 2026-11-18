@@ -264,14 +264,44 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 import urllib.request
 
-# ===== دوال الأسئلة =====
-async def finish_after_120(context):
-    await asyncio.sleep(120)
-    await finish_quiz(context)
-    
+# ===== نظام الأسئلة V3 - كامل =====
+USED_QUESTIONS = []
+QUIZ_STREAK = {}
+QUIZ_STATS = {}
+WRONG_STREAK = {}
+
+LEVEL_INFO = {
+    "easy": {"emoji": "🟢 سهل", "coins": 1, "color": "🟢"},
+    "medium": {"emoji": "🟡 متوسط", "coins": 2, "color": "🟡"},
+    "hard": {"emoji": "🔴 صعب", "coins": 3, "color": "🔴"},
+}
+
+FUNNY_LEVEL_1 = [
+    "😅 {name} هالمرة ما زبطت معك، الجاي أحسن!",
+    "🤏 {name} كنت قريب! بس الرادار خدعك",
+]
+FUNNY_LEVEL_2 = [
+    "😂😂 {name} تاني غلطة ورا بعض! شكلك بتحلل وانت نايم!",
+    "🤦 {name} مرتين غلط! حتى الدرون ضحك عليك!",
+]
+FUNNY_LEVEL_3 = [
+    "🚨🚨 فضيحة! {name} غلط 3 مرات ورا بعض! 👑 ملك الهبد الرسمي!",
+    "😂😂😂 {name} خلص، القيصر قرر يسحب منك الرتبة العسكرية الوهمية!",
+]
+
+def get_funny_message(name, uid):
+    wrong = WRONG_STREAK.get(str(uid), 0)
+    if wrong >= 3:
+        return random.choice(FUNNY_LEVEL_3).format(name=name)
+    elif wrong == 2:
+        return random.choice(FUNNY_LEVEL_2).format(name=name)
+    else:
+        return random.choice(FUNNY_LEVEL_1).format(name=name)
+
 async def finish_after_120_for_chat(context, chat_id):
     await asyncio.sleep(120)
     await finish_quiz(context, chat_id)
+
 async def quiz_loop(app):
     await asyncio.sleep(10)
     while True:
@@ -285,17 +315,24 @@ async def quiz_loop(app):
 async def send_quiz_for_chat(context, chat_id):
     if chat_id in ACTIVE_QUIZZES:
         return
-    q_index = random.randrange(len(QUESTIONS))
+    global USED_QUESTIONS
+    if len(USED_QUESTIONS) >= len(QUESTIONS):
+        USED_QUESTIONS = []
+    available = [i for i in range(len(QUESTIONS)) if i not in USED_QUESTIONS]
+    q_index = random.choice(available)
+    USED_QUESTIONS.append(q_index)
     q = QUESTIONS[q_index]
-    labels = ["A", "B", "C", "D"]
-    keyboard = [[InlineKeyboardButton(f"{labels[i]} - {opt}", callback_data=f"quiz_{q_index}_{i}")] for i, opt in enumerate(q["options"])]
-    markup = InlineKeyboardMarkup(keyboard)
-    text = f"🎖️ سؤال عسكري جديد! 🎖️\n\n❓ {q['q']}\n\n⏳ معك 2 دقيقة فقط!\n🪙 اللي بجاوب صح بياخد 1 عملة ذهبية\n⚠️ ممنوع تغيير الجواب!"
+    labels = ["أ", "ب", "ج", "د"]
+    lvl = LEVEL_INFO.get(q.get("level", "easy"), LEVEL_INFO["easy"])
+    cat = q.get("cat", "عام")
+    options_text = "".join([f"{labels[i]} - {opt}\n" for i, opt in enumerate(q["options"])])
+    keyboard = [[InlineKeyboardButton(f"\u200f{labels[i]} - {opt}", callback_data=f"quiz_{q_index}_{i}")] for i, opt in enumerate(q["options"])]
+    text = f"{lvl['color']} سؤال {lvl['emoji']} | 📂 {cat}\n\n❓ {q['q']}\n\n{options_text}\n⏳ معك 2 دقيقة!\n🪙 صح = {lvl['coins']} عملة | ⚡ أول واحد صح = ضعف العملات\n🔥 3 صح ورا بعض = +5 عملات"
     try:
-        msg = await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
-        ACTIVE_QUIZZES[chat_id] = {"q_index": q_index, "message_id": msg.message_id, "chat_id": chat_id, "answers": {}}
+        msg = await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=InlineKeyboardMarkup(keyboard))
+        ACTIVE_QUIZZES[chat_id] = {"q_index": q_index, "message_id": msg.message_id, "chat_id": chat_id, "answers": {}, "level": q.get("level", "easy")}
         asyncio.create_task(finish_after_120_for_chat(context, chat_id))
-        print(f"Quiz sent: {q_index} to {chat_id}")
+        asyncio.create_task(quiz_countdown(context, chat_id, msg.message_id))
     except Exception as e:
         print(f"Send quiz failed {chat_id}: {e}")
 
@@ -303,9 +340,22 @@ async def send_quiz(context):
     for chat_id in list(GROUP_IDS):
         await send_quiz_for_chat(context, chat_id)
 
-async def send_quiz(context):
-    for chat_id in list(GROUP_IDS):
-        await send_quiz_for_chat(context, chat_id)
+async def quiz_countdown(context, chat_id, message_id):
+    for remaining in [90, 60, 30]:
+        await asyncio.sleep(30)
+        if chat_id not in ACTIVE_QUIZZES:
+            return
+        try:
+            quiz = ACTIVE_QUIZZES[chat_id]
+            q = QUESTIONS[quiz["q_index"]]
+            labels = ["أ", "ب", "ج", "د"]
+            options_text = "".join([f"{labels[i]} - {opt}\n" for i, opt in enumerate(q["options"])])
+            lvl = LEVEL_INFO.get(quiz.get("level", "easy"), LEVEL_INFO["easy"])
+            keyboard = [[InlineKeyboardButton(f"\u200f{labels[i]} - {opt}", callback_data=f"quiz_{quiz['q_index']}_{i}")] for i, opt in enumerate(q["options"])]
+            new_text = f"{lvl['color']} سؤال {lvl['emoji']} | 📂 {q.get('cat','عام')}\n\n❓ {q['q']}\n\n{options_text}\n⏰ باقي {remaining} ثانية! سارعوا 🔥"
+            await context.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=new_text, reply_markup=InlineKeyboardMarkup(keyboard))
+        except:
+            pass
 
 async def finish_quiz(context, chat_id=None):
     if chat_id is None:
@@ -318,8 +368,7 @@ async def finish_quiz(context, chat_id=None):
     message_id = quiz["message_id"]
     q = QUESTIONS[q_index]
     correct = q["correct"]
-    labels = ["A", "B", "C", "D"]
-    # قفل الأزرار
+    labels = ["أ", "ب", "ج", "د"]
     try:
         await context.bot.edit_message_reply_markup(chat_id=chat_id, message_id=message_id, reply_markup=None)
     except:
@@ -331,23 +380,46 @@ async def finish_quiz(context, chat_id=None):
             winners.append((uid, name))
         else:
             losers.append((uid, name))
-    # توزيع العملات
+    lvl_coins = LEVEL_INFO.get(quiz.get("level", "easy"), LEVEL_INFO["easy"])["coins"]
     winners_text = ""
     if winners:
+        first_uid = winners[0][0]
         for uid, name in winners:
-            new_coins = add_coins(int(uid), 1)
+            was_habid = WRONG_STREAK.get(str(uid), 0) >= 3
+            bonus = lvl_coins * 2 if str(uid) == str(first_uid) else lvl_coins
+            new_coins = add_coins(int(uid), bonus)
             WEEKLY[str(uid)] = WEEKLY.get(str(uid), 0) + 10
-            winners_text += f"🏆 @{name} - ربح 1 عملة ذهبية 🪙 (صار معو {new_coins})\n"
+            QUIZ_STATS.setdefault(str(uid), {"right": 0, "wrong": 0})
+            QUIZ_STATS[str(uid)]["right"] += 1
+            QUIZ_STREAK[str(uid)] = QUIZ_STREAK.get(str(uid), 0) + 1
+            streak_msg = ""
+            if QUIZ_STREAK[str(uid)] % 3 == 0:
+                add_coins(int(uid), 5)
+                streak_msg = " 🔥 بونص سلسلة +5!"
+            tag = " ⚡ أسرع محلل!" if str(uid) == str(first_uid) else ""
+            comeback_msg = ""
+            if was_habid:
+                comeback_msg = f"\n🎉🎉 عودة الأسطورة! {name} رجع للطريق الصح بعد الهبد! 😂🔥\n👑 تم سحب لقب ملك الهبد من {name}! مبروك التوبة!"
+                if QUIZ_STREAK[str(uid)] >= 2:
+                    add_coins(int(uid), 3)
+                    comeback_msg += f"\n🏆 بونص العودة +3 عملات!"
+            winners_text += f"🏆 {name}{tag} - ربح {bonus} عملة 🪙 (صار معو {new_coins}){streak_msg}{comeback_msg}\n"
+            WRONG_STREAK[str(uid)] = 0
+        for uid, name in losers:
+            QUIZ_STREAK[str(uid)] = 0
+            QUIZ_STATS.setdefault(str(uid), {"right": 0, "wrong": 0})
+            QUIZ_STATS[str(uid)]["wrong"] += 1
     else:
-        winners_text = "😔 ما حد جاوب صح هالمرة!"
-    # رسائل مضحكة
+        winners_text = "😴 ما حد جاوب صح هالمرة!"
     funny_text = ""
     if losers:
         funny_text = "\n😂 اللي جاوبو غلط:\n"
         for uid, name in losers:
-            funny_text += random.choice(FUNNY_MESSAGES).format(name=name) + "\n"
-    correct_text = q["options"][correct]
-    final_text = f"⏰ انتهى الوقت!\n\n✅ الجواب الصح: {labels[correct]} - {correct_text}\n\n📚 الشرح:\n{q['explain']}\n\n{winners_text}{funny_text}\n\nالسؤال الجاي بعد ساعتين 🔥"
+            WRONG_STREAK[str(uid)] = WRONG_STREAK.get(str(uid), 0) + 1
+            funny_text += get_funny_message(name, uid) + "\n"
+            if WRONG_STREAK[str(uid)] >= 3:
+                funny_text += f"🏷️ لقب جديد لـ {name}: ملك الهبد 👑😂\n"
+    final_text = f"⏰ انتهى الوقت!\n\n✅ الجواب الصح: {labels[correct]} - {q['options'][correct]}\n\n📚 الشرح:\n{q['explain']}\n\n{winners_text}{funny_text}\n\nالسؤال الجاي بعد ساعتين 🔥"
     try:
         await context.bot.send_message(chat_id=chat_id, text=final_text)
     except Exception as e:
@@ -356,7 +428,7 @@ async def finish_quiz(context, chat_id=None):
 
 async def quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    data = query.data  # quiz_qindex_choice
+    data = query.data
     try:
         _, q_idx_str, choice_str = data.split("_")
         q_idx = int(q_idx_str)
@@ -365,18 +437,14 @@ async def quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
         return
     user = query.from_user
-    # اذا ما في سؤال فعال
     quiz = ACTIVE_QUIZZES.get(query.message.chat_id)
     if not quiz or quiz["q_index"] != q_idx:
         await query.answer("انتهى وقت السؤال!", show_alert=True)
         return
-    # ممنوع تغيير الجواب
     if str(user.id) in quiz["answers"]:
         await query.answer("انت جاوبت قبل هيك! ممنوع تغيير الجواب 😂", show_alert=True)
         return
-    # حفظ الجواب
     quiz["answers"][str(user.id)] = (choice, user.first_name)
-    # حفظ اسم المستخدم
     with _LOCK:
         if str(user.id) not in USERS:
             USERS[str(user.id)] = {"points": 0, "name": user.first_name, "coins": 0, "msg_count": 0}
@@ -384,6 +452,16 @@ async def quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             USERS[str(user.id)]["name"] = user.first_name
     save_one_user(user.id)
     await query.answer("تم تسجيل جوابك! استنى انتهاء الوقت 🔥", show_alert=False)
+
+async def quiz_stats_cmd(update, context):
+    uid = str(update.effective_user.id)
+    s = QUIZ_STATS.get(uid, {"right": 0, "wrong": 0})
+    total = s["right"] + s["wrong"]
+    perc = int(s["right"]/total*100) if total > 0 else 0
+    streak = QUIZ_STREAK.get(uid, 0)
+    wrong = WRONG_STREAK.get(uid, 0)
+    title = " 👑 ملك الهبد" if wrong >= 3 else ""
+    await update.message.reply_text(f"📊 احصائياتك بالأسئلة يا {update.effective_user.first_name}{title}:\n\n✅ صح: {s['right']}\n❌ غلط: {s['wrong']}\n🎯 نسبة ذكائك: {perc}%\n🔥 سلسلتك: {streak}\n😂 غلطات ورا بعض: {wrong}")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
