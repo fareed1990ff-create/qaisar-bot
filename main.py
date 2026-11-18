@@ -1223,6 +1223,58 @@ async def finish_scenario(context, chat_id):
                 winners_text += f"🏆 {name} - قرارك كان قرار الأغلبية!\n"
     if not winners_text:
                 winners_text = "😅 ما حد صوت هالمرة!"
+        
+    result_text = f"انتهى سيناريو #{s['num']}!\n\nالقرار الفائز: {labels[winner_idx]} - {s['decisions'][winner_idx]}\n\n{winners_text}"
+    try:
+        await context.bot.send_message(chat_id=chat_id, text=result_text)
+    except Exception as e:
+        print(f"Finish senario failed: {e}")
+    del ACTIVE_SENARIO[chat_id]
+async def post_init(a):
+    asyncio.create_task(quiz_loop(a))
+    asyncio.create_task(weekly_hero_loop(a))
+    asyncio.create_task(prediction_loop(a))
+    asyncio.create_task(senario_loop(a))
+
+async def senario_callback(update, context):
+    query = update.callback_query
+    try:
+        _, num_str, choice_str = query.data.split("_")
+        choice = int(choice_str)
+    except:
+        await query.answer()
+        return
+    chat_id = query.message.chat_id
+    sc = ACTIVE_SENARIO.get(chat_id)
+    if not sc:
+        await query.answer("انتهى السيناريو!", show_alert=True)
+        return
+    if str(query.from_user.id) in sc["votes"]:
+        await query.answer("صوتت قبل هيك!", show_alert=True)
+        return
+    sc["votes"][str(query.from_user.id)] = (choice, query.from_user.first_name)
+    await query.answer("تم تسجيل صوتك!")
+    try:
+        add_points(query.from_user.id, 1)
+    except:
+        pass
+
+async def cmd_senario(update, context):
+    chat_id = update.effective_chat.id
+    save_group_id(chat_id)
+    await send_scenario_for_chat(context, chat_id)
+    await update.message.reply_text("تم ارسال سيناريو تجريبي")
+
+async def senario_loop(app):
+    await asyncio.sleep(10)
+    while True:
+        try:
+            fake = type("C", (), {"bot": app.bot})()
+            for chat_id in list(GROUP_IDS):
+                await send_scenario_for_chat(fake, chat_id)
+        except Exception as e:
+            print(f"Senario loop error: {e}")
+        await asyncio.sleep(7200)
 
 def main():
     keep_alive()
