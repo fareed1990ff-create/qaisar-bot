@@ -1222,7 +1222,7 @@ async def finish_scenario(context, chat_id):
             except:
                 winners_text += f"🏆 {name} - قرارك كان قرار الأغلبية!\n"
     if not winners_text:
-        winners_text = "😅 ما حد صوت هالمرة
+                winners_text = "😅 ما حد صوت هالمرة
 
 def main():
     keep_alive()
