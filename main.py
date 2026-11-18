@@ -520,7 +520,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def buttons_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-        if query.data.startswith("senario_"):
+    if query.data.startswith("senario_"):
         await senario_callback(update, context)
         return
     # اذا كان جواب سؤال، حوله لدالة الأسئلة
