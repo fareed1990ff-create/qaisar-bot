@@ -1120,24 +1120,20 @@ async def natija_command(update, context):
     await update.message.reply_text(text)
     PREDICTIONS.clear()
 
-# ===== نظام الأسئلة V3 - الجزء 1: الأسئلة والمتغيرات =====
-QUESTIONS = [
-    {"q": "ما هي المهمة الأساسية لنظام الدفاع الجوي S-400؟", "options": ["اعتراض الطائرات والصواريخ بعيدة المدى", "اعتراض الطائرات والصواريخ قصيرة المدى", "اعتراض الدبابات", "اعتراض السفن"], "correct": 0, "explain": "S-400 مصمم لاعتراض الطائرات والصواريخ بعيدة المدى.", "level": "easy", "cat": "دفاع جوي"},
-    {"q": "ما هو مدى صاروخ HIMARS بالنسخة الأساسية GMLRS؟", "options": ["حوالي 45 كم", "حوالي 80 كم", "حوالي 150 كم", "حوالي 300 كم"], "correct": 1, "explain": "مداه حوالي 80 كم.", "level": "medium", "cat": "صواريخ"},
-    {"q": "ما هو التكتيك الأفضل ضد رتل عسكري؟", "options": ["ضرب المقدمة والوسط", "ضرب المقدمة والمؤخرة لحصره", "ضرب المؤخرة والوسط", "ضرب المقدمة فقط"], "correct": 1, "explain": "اضرب أول وآخر آلية لحصره.", "level": "hard", "cat": "تكتيك"},
-]
-
-LEVEL_INFO = {
-    "easy": {"emoji": "🟢 سهل", "coins": 1, "color": "🟢"},
-    "medium": {"emoji": "🟡 متوسط", "coins": 2, "color": "🟡"},
-    "hard": {"emoji": "🔴 صعب", "coins": 3, "color": "🔴"},
-}
-
-ACTIVE_QUIZZES = {}
-USED_QUESTIONS = []
-QUIZ_STREAK = {}
-QUIZ_STATS = {}
-WRONG_STREAK = {}
+def make_card(name, points, coins, rank):
+    # بطاقة بسيطة بدون صورة لحد ما نعمل تصميم
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        img = Image.new("RGB", (800, 400), (20, 20, 30))
+        d = ImageDraw.Draw(img)
+        d.text((50, 50), f"{name}", fill=(255, 215, 0))
+        d.text((50, 150), f"Points: {points} | Coins: {coins} | Rank: #{rank}", fill=(255, 255, 255))
+        path = f"card_{rank}.png"
+        img.save(path)
+        return path
+    except Exception as e:
+        print(f"Card error: {e}")
+        return "main.jpg"
 
 def main():
     keep_alive()
