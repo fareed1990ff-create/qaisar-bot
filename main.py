@@ -340,7 +340,7 @@ async def quiz_loop(app):
             await send_quiz(fake_context)
         except Exception as e:
             print(f"Quiz loop error: {e}")
-        await asyncio.sleep(7200)
+        await asyncio(21600)
 
 async def send_quiz_for_chat(context, chat_id):
     if chat_id in ACTIVE_QUIZZES:
@@ -1274,7 +1274,7 @@ async def senario_loop(app):
                 await send_scenario_for_chat(fake, chat_id)
         except Exception as e:
             print(f"Senario loop error: {e}")
-        await asyncio.sleep(7200)
+        await asyncio.sleep(21600)
 
 def main():
     keep_alive()
