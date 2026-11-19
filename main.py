@@ -1287,6 +1287,55 @@ async def fix_tag(update, context):
     else:
         await update.message.reply_text(f"فشل الوسم ❌\nالرتبة: {rank}\nابعثلي سكرين للوج بالـ Render")
 
+async def auto_question_job(context):
+    if not GROUP_IDS:
+        return
+    for chat_id in list(GROUP_IDS):
+        try:
+            me = await context.bot.get_me()
+            member = await context.bot.get_chat_member(chat_id, me.id)
+            if member.status not in ["administrator", "creator"]:
+                continue
+            q = random.choice(QUESTIONS)
+            # اذا السؤال فيه خيارات، ابعته كـ Poll زي أمر /sual
+            if isinstance(q, dict) and "options" in q:
+                question_text = q.get("q") or q.get("question") or "سؤال جديد"
+                options = q.get("options")
+                correct = q.get("answer", 0)
+                if isinstance(correct, str) and correct in options:
+                    correct = options.index(correct)
+                await context.bot.send_poll(
+                    chat_id=chat_id,
+                    question=question_text,
+                    options=options,
+                    type="quiz",
+                    correct_option_id=int(correct),
+                    is_anonymous=False
+                )
+            else:
+                text = q.get("q") if isinstance(q, dict) else str(q)
+                await context.bot.send_message(chat_id=chat_id, text=f"❓ سؤال جديد\n\n{text}")
+        except Exception as e:
+            print(f"auto_q {chat_id}: {e}")
+
+async def auto_scenario_job(context):
+    if not GROUP_IDS:
+        return
+    for chat_id in list(GROUP_IDS):
+        try:
+            me = await context.bot.get_me()
+            member = await context.bot.get_chat_member(chat_id, me.id)
+            if member.status not in ["administrator", "creator"]:
+                continue
+            s = random.choice(SCENARIOS)
+            text = s.get("text") if isinstance(s, dict) else str(s)
+            if isinstance(s, dict) and s.get("title"):
+                text = f"{s.get('title')}\n\n{text}"
+            await context.bot.send_message(chat_id=chat_id, text=f"🎭 سيناريو جديد\n\n{text}")
+        except Exception as e:
+            print(f"auto_s {chat_id}: {e}")
+
+
 def main():
     keep_alive()
     global USERS
