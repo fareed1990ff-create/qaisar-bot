@@ -1294,6 +1294,8 @@ def main():
     load_group_ids()
     load_war()
     app = Application.builder().token(TOKEN).post_init(post_init).build()
+    app.job_queue.run_repeating(auto_question_job, interval=3*60*60, first=15)
+    app.job_queue.run_repeating(auto_scenario_job, interval=8*60*60, first=30)
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("harb", cmd_harb))
     app.add_handler(CommandHandler("attack", cmd_attack))
