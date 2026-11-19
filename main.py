@@ -599,8 +599,9 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += f"{emoji} {i}. {name} - {pts} نقطة\n"
     with open(card, "rb") as f:
        await update.message.reply_photo(photo=f, caption=f"👑 بطاقتك يا {user.first_name}")
-
+OWNER_ID = 5684337197
 async def test_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    OWNER_ID = 5684337197
     chat_id = update.effective_chat.id
     save_group_id(chat_id)
     await send_quiz_for_chat(context, chat_id)
