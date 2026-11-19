@@ -340,7 +340,7 @@ async def quiz_loop(app):
             await send_quiz(fake_context)
         except Exception as e:
             print(f"Quiz loop error: {e}")
-        await asyncio(21600)
+            await asyncio.sleep(21600)
 
 async def send_quiz_for_chat(context, chat_id):
     if chat_id in ACTIVE_QUIZZES:
