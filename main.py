@@ -352,6 +352,13 @@ async def send_quiz_for_chat(context, chat_id):
     q_index = random.choice(available)
     USED_QUESTIONS.append(q_index)
     q = QUESTIONS[q_index]
+        options_shuffled = q["options"][:]
+    correct_text = options_shuffled[q["correct"]]
+    random.shuffle(options_shuffled)
+    correct_index = options_shuffled.index(correct_text)
+    q = dict(q)
+    q["options"] = options_shuffled
+    q["correct"] = correct_index
     labels = ["أ", "ب", "ج", "د"]
     lvl = LEVEL_INFO.get(q.get("level", "easy"), LEVEL_INFO["easy"])
     cat = q.get("cat", "عام")
