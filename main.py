@@ -601,7 +601,9 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
        await update.message.reply_photo(photo=f, caption=f"👑 بطاقتك يا {user.first_name}")
 OWNER_ID = 5684337197
 async def test_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    OWNER_ID = 5684337197
+        if update.effective_user.id != OWNER_ID:
+        await update.message.reply_text("⛔ هاد الأمر بس للمالك يا وحش! استنى السؤال الأوتوماتيك كل 3 ساعات.")
+        return
     chat_id = update.effective_chat.id
     save_group_id(chat_id)
     await send_quiz_for_chat(context, chat_id)
