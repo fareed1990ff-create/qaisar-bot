@@ -1423,7 +1423,6 @@ def main():
     # # عجلة الحظ كل يوم 9 المسا بتوقيت فلسطين
     tz = ZoneInfo("Asia/Hebron")
     app.job_queue.run_daily(send_wheel, time=dtime(hour=21, minute=0, tzinfo=tz))
-    app.add_handler(MessageHandler(filters.Regex(r"^(عجلة|/wheel_test)$"), wheel_test))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("harb", cmd_harb))
     app.add_handler(CommandHandler("attack", cmd_attack))
