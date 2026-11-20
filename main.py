@@ -1409,6 +1409,17 @@ async def wheel_join(update, context):
     WHEEL["players"][uid] = name
     await query.answer(f"تم! انت رقم {len(WHEEL['players'])} بالعجلة 🎡", show_alert=True)
 
+async def wheel_test(update, context):
+    global WHEEL
+    chat_id = update.effective_chat.id
+    if WHEEL["active"]:
+        await update.message.reply_text("العجلة شغالة أصلا 🎡 استنى تخلص")
+        return
+    WHEEL = {"active": True, "players": {}}
+    keyboard = [[InlineKeyboardButton("شارك 🎡", callback_data="wheel_join")]]
+    msg = await context.bot.send_message(chat_id=chat_id, text="🎡 العجلة بلشت!\nمعك 1 دقيقة تشارك! كبس شارك 🎡", reply_markup=InlineKeyboardMarkup(keyboard))
+    await asyncio.sleep(60)
+    await close_wheel(context, chat_id, msg.message_id)
 
 def main():
     keep_alive()
@@ -1423,6 +1434,7 @@ def main():
     # # عجلة الحظ كل يوم 9 المسا بتوقيت فلسطين
     tz = ZoneInfo("Asia/Hebron")
     app.job_queue.run_daily(send_wheel, time=dtime(hour=21, minute=0, tzinfo=tz))
+    app.add_handler(MessageHandler(filters.Regex(r"^(عجلة|/عجلة)$"), wheel_test))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("harb", cmd_harb))
     app.add_handler(CommandHandler("attack", cmd_attack))
