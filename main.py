@@ -503,10 +503,10 @@ async def quiz_stats_cmd(update, context):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     #with _LOCK:
-        if str(user.id) not in USERS:
-            USERS[str(user.id)] = {"points": 0, "name": user.first_name, "coins": 0, "msg_count": 0}
-        else:
-            USERS[str(user.id)]["name"] = user.first_name
+    if str(user.id) not in USERS:
+        USERS[str(user.id)] = {"points": 0, "name": user.first_name, "coins": 0, "msg_count": 0}
+    else:
+        USERS[str(user.id)]["name"] = user.first_name
     #save_one_user(user.id)
     keyboard = [
         [InlineKeyboardButton("🪙 العملات الذهبية", callback_data="coins_info"), InlineKeyboardButton("🎮 قريبا", callback_data="soon")],
