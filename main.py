@@ -1433,7 +1433,6 @@ async def send_wheel(context):
 
 async def wheel_join(update, context):
     query = update.callback_query
-    await query.answer()
     if not wheel_active:
         await query.answer("العجلة مش شغالة هسا", show_alert=True)
         return
