@@ -507,7 +507,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             USERS[str(user.id)] = {"points": 0, "name": user.first_name, "coins": 0, "msg_count": 0}
         else:
             USERS[str(user.id)]["name"] = user.first_name
-    save_one_user(user.id)
+    #save_one_user(user.id)
     keyboard = [
         [InlineKeyboardButton("🪙 العملات الذهبية", callback_data="coins_info"), InlineKeyboardButton("🎮 قريبا", callback_data="soon")],
         [InlineKeyboardButton("💰 رصيدي", callback_data="balance"), InlineKeyboardButton("🏆 ترتيب الأبطال", callback_data="leaderboard")],
@@ -713,9 +713,9 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
             print(f"Welcome failed: {e}")
 async def post_init(a):
     asyncio.create_task(quiz_loop(a))
-    #asyncio.create_task(weekly_hero_loop(a))
-    #asyncio.create_task(prediction_loop(a))
-    #asyncio.create_task(senario_loop(a))
+    asyncio.create_task(weekly_hero_loop(a))
+    asyncio.create_task(prediction_loop(a))
+    asyncio.create_task(senario_loop(a))
 # ===== بطل الأسبوع =====
 async def announce_weekly_hero(context):
     if not WEEKLY:
@@ -1328,12 +1328,12 @@ async def auto_scenario_job(context):
 def main():
     keep_alive()
     global USERS
-    #load_users_once()
-    #load_group_ids()
-    #load_war()
+    load_users_once()
+    load_group_ids()
+    load_war()
     app = Application.builder().token(TOKEN).post_init(post_init).build()
-   # app.job_queue.run_repeating(auto_question_job, interval=3*60*60, first=15)
-   # app.job_queue.run_repeating(auto_scenario_job, interval=8*60*60, first=30)
+    app.job_queue.run_repeating(auto_question_job, interval=3*60*60, first=15)
+    app.job_queue.run_repeating(auto_scenario_job, interval=8*60*60, first=30)
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("harb", cmd_harb))
     app.add_handler(CommandHandler("attack", cmd_attack))
