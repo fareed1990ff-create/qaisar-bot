@@ -1326,7 +1326,7 @@ async def auto_scenario_job(context):
 
 import random
 from datetime import time as dtime
-import pytz
+from zoneinfo import ZoneInfo
 
 WHEEL = {"active": False, "players": {}} # user_id -> name
 
@@ -1420,7 +1420,7 @@ def main():
     app.job_queue.run_repeating(auto_question_job, interval=3*60*60, first=15)
     app.job_queue.run_repeating(auto_scenario_job, interval=8*60*60, first=30)
     # # عجلة الحظ كل يوم 9 المسا بتوقيت فلسطين
-    tz = pytz.timezone("Asia/Hebron")
+    tz = ZoneInfo("Asia/Hebron")
     app.job_queue.run_daily(send_wheel, time=dtime(hour=21, minute=0, tzinfo=tz))
     app.add_handler(CallbackQueryHandler(wheel_join, pattern="^wheel_join$"))
     app.add_handler(MessageHandler(filters.Regex(r"^(عجلة|/wheel_test)$"), wheel_test))
