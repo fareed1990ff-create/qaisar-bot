@@ -1467,7 +1467,7 @@ def main():
     load_group_ids()
     load_war()
     app = Application.builder().token(TOKEN).post_init(post_init).build()
-    app.add_handler(CallbackQueryHandler(wheel_join...
+    app.add_handler(CallbackQueryHandler(wheel_join, pattern="^wheel_join$"))
     app.job_queue.run_repeating(auto_question_job, interval=3*60*60, first=15)
     app.job_queue.run_repeating(auto_scenario_job, interval=8*60*60, first=30)
     # # عجلة الحظ كل يوم 9 المسا بتوقيت فلسطين
