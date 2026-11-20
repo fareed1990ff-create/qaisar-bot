@@ -1328,8 +1328,8 @@ async def auto_scenario_job(context):
 def main():
     keep_alive()
     global USERS
-    load_users_once()
-    load_group_ids()
+    #load_users_once()
+    #load_group_ids()
     #load_war()
     app = Application.builder().token(TOKEN).post_init(post_init).build()
    # app.job_queue.run_repeating(auto_question_job, interval=3*60*60, first=15)
