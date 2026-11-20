@@ -1423,6 +1423,7 @@ def main():
     tz = pytz.timezone("Asia/Hebron")
     app.job_queue.run_daily(send_wheel, time=dtime(hour=21, minute=0, tzinfo=tz))
     app.add_handler(CallbackQueryHandler(wheel_join, pattern="^wheel_join$"))
+    app.add_handler(MessageHandler(filters.Regex(r"^(عجلة|/wheel_test)$"), wheel_test))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("harb", cmd_harb))
     app.add_handler(CommandHandler("attack", cmd_attack))
