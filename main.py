@@ -1324,6 +1324,91 @@ async def auto_scenario_job(context):
         except Exception as e:
             print(f"auto_s {chat_id}: {e}")
 
+import random
+from datetime import time as dtime
+import pytz
+
+WHEEL = {"active": False, "players": {}} # user_id -> name
+
+WHEEL_PRIZES = [
+    ("👑 جاكبوت! +50 عملة", 50, 5),
+    ("🪙 ذهبي! +25 عملة", 25, 15),
+    ("🪙 فضي! +10 عملة", 10, 30),
+    ("🪙 برونزي! +5 عملة", 5, 30),
+    ("💨 حظ أوفر! 0", 0, 15),
+    ("💀 نحس! -5 عملة", -5, 5),
+]
+
+def spin_wheel():
+    r = random.randint(1, 100)
+    s = 0
+    for label, coins, chance in WHEEL_PRIZES:
+        s += chance
+        if r <= s:
+            return label, coins
+    return WHEEL_PRIZES[2]
+
+async def send_wheel(context):
+    global WHEEL
+    chat_id = CHAT_ID  # نفس الـ CHAT_ID اللي عندك تبع القروب
+    WHEEL = {"active": True, "players": {}}
+    keyboard = [[InlineKeyboardButton("🎡 شارك بالعجلة", callback_data="wheel_join")]]
+    text = "🎡🎡 عجلة الحظ فتحت! 🎡🎡\n\n⏰ معكم 10 دقايق بس!\n🪙 جوائز اليوم:\n👑 جاكبوت 50 | 🪙 ذهبي 25 | 🪙 فضي 10 | 🪙 برونزي 5\n💨 حظ أوفر | 💀 نحس -5\n\nكبسة وحدة وبتدخل السحب!"
+    msg = await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=InlineKeyboardMarkup(keyboard))
+    # بعد 10 دقايق بنقفل
+    import asyncio
+    await asyncio.sleep(10*60)
+    await close_wheel(context, chat_id, msg.message_id)
+
+async def close_wheel(context, chat_id, msg_id):
+    if not WHEEL["active"]:
+        return
+    WHEEL["active"] = False
+    players = WHEEL["players"]
+    if not players:
+        await context.bot.send_message(chat_id=chat_id, text="🎡 خلص وقت العجلة، وما حد شارك اليوم 😢 بكرة 9 المسا بنرجع!")
+        return
+
+    # اعلان القفل
+    await context.bot.send_message(chat_id=chat_id, text=f"⏳ خلص التسجيل! {len(players)} لاعب مشارك... عم نلف العجلة... 🎡")
+    
+    results = []
+    for uid, name in players.items():
+        label, coins = spin_wheel()
+        # هون بنستخدم نفس دالة العملات اللي عندك
+        try:
+            new_coins = add_coins(int(uid), coins)
+        except:
+            new_coins = coins
+        results.append((name, label, coins, new_coins))
+    
+    # ترتيب الفايزين من الأعلى للأقل
+    results.sort(key=lambda x: x[2], reverse=True)
+    
+    text = "🎡🎡 نتائج عجلة الحظ اليوم! 🎡🎡\n\n"
+    for name, label, coins, total in results:
+        text += f"• {name} - {label} | صار معه {total} 🪙\n"
+    
+    # ملك اليوم
+    if results and results[0][2] > 0:
+        text += f"\n👑 ملك الحظ اليوم: {results[0][0]} 🔥"
+    
+    await context.bot.send_message(chat_id=chat_id, text=text)
+    WHEEL = {"active": False, "players": {}}
+
+async def wheel_join(update, context):
+    query = update.callback_query
+    uid = str(query.from_user.id)
+    name = query.from_user.first_name
+    if not WHEEL["active"]:
+        await query.answer("العجلة مسكرة، استنى بكرة 9 المسا!", show_alert=True)
+        return
+    if uid in WHEEL["players"]:
+        await query.answer("انت مشارك أصلا! استنى النتايج 🎡", show_alert=True)
+        return
+    WHEEL["players"][uid] = name
+    await query.answer(f"تم! انت رقم {len(WHEEL['players'])} بالعجلة 🎡", show_alert=True)
+
 
 def main():
     keep_alive()
@@ -1334,6 +1419,10 @@ def main():
     app = Application.builder().token(TOKEN).post_init(post_init).build()
     app.job_queue.run_repeating(auto_question_job, interval=3*60*60, first=15)
     app.job_queue.run_repeating(auto_scenario_job, interval=8*60*60, first=30)
+    # # عجلة الحظ كل يوم 9 المسا بتوقيت فلسطين
+    tz = pytz.timezone("Asia/Hebron")
+    app.job_queue.run_daily(send_wheel, time=dtime(hour=21, minute=0, tzinfo=tz))
+    app.add_handler(CallbackQueryHandler(wheel_join, pattern="^wheel_join$"))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("harb", cmd_harb))
     app.add_handler(CommandHandler("attack", cmd_attack))
