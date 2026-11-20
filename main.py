@@ -1409,6 +1409,57 @@ async def wheel_join(update, context):
     WHEEL["players"][uid] = name
     await query.answer(f"تم! انت رقم {len(WHEEL['players'])} بالعجلة 🎡", show_alert=True)
 
+# ===== عجلة الحظ =====
+import random
+wheel_participants = set()
+wheel_active = False
+GROUP_CHAT_ID = None
+
+async def send_wheel(context):
+    global wheel_participants, wheel_active, GROUP_CHAT_ID
+    if GROUP_CHAT_ID is None:
+        return
+    wheel_participants = set()
+    wheel_active = True
+    keyboard = [[InlineKeyboardButton("🎡 شارك", callback_data="wheel_join")]]
+    await context.bot.send_message(chat_id=GROUP_CHAT_ID, text="🎡 عجلة الحظ اليومية!\nمعكم 10 دقايق تشاركوا!\nاكبسوا شارك 🎡", reply_markup=InlineKeyboardMarkup(keyboard))
+    await asyncio.sleep(10*60)
+    wheel_active = False
+    if not wheel_participants:
+        await context.bot.send_message(chat_id=GROUP_CHAT_ID, text="😔 ما حد شارك اليوم بالعجلة")
+        return
+    winner = random.choice(list(wheel_participants))
+    await context.bot.send_message(chat_id=GROUP_CHAT_ID, text=f"🎉 مبروك للفائز بالعجلة: {winner}!")
+
+async def wheel_join(update, context):
+    query = update.callback_query
+    await query.answer()
+    if not wheel_active:
+        await query.answer("العجلة مش شغالة هسا", show_alert=True)
+        return
+    name = query.from_user.first_name
+    if query.from_user.id in wheel_participants:
+        await query.answer("انت مشارك أصلا!", show_alert=True)
+        return
+    wheel_participants.add(query.from_user.id)
+    await query.answer("تم! انت دخلت العجلة 🎡")
+
+async def wheel_test(update, context):
+    global wheel_participants, wheel_active, GROUP_CHAT_ID
+    GROUP_CHAT_ID = update.effective_chat.id
+    wheel_participants = set()
+    wheel_active = True
+    keyboard = [[InlineKeyboardButton("🎡 شارك", callback_data="wheel_join")]]
+    await update.message.reply_text("🎡 تجربة! معك 1 دقيقة تشارك!\nكبس شارك 🎡", reply_markup=InlineKeyboardMarkup(keyboard))
+    await asyncio.sleep(60)
+    wheel_active = False
+    if not wheel_participants:
+        await update.message.reply_text("😔 ما حد شارك بالتجربة")
+        return
+    winner_id = random.choice(list(wheel_participants))
+    await update.message.reply_text(f"🎉 مبروك للفائز بالتجربة: {winner_id}!")
+
+
 
 def main():
     keep_alive()
