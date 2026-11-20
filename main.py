@@ -1448,16 +1448,20 @@ async def wheel_test(update, context):
     GROUP_CHAT_ID = update.effective_chat.id
     wheel_participants = set()
     wheel_active = True
-    keyboard = [[InlineKeyboardButton("🎡 شارك", callback_data="wheel_join")]]
-    await update.message.reply_text("🎡 تجربة! معك 1 دقيقة تشارك!\nكبس شارك 🎡", reply_markup=InlineKeyboardMarkup(keyboard))
-    await asyncio.sleep(60)
+    keyboard = [[InlineKeyboardButton("شارك 🎡", callback_data="wheel_join")]]
+    await update.message.reply_text("🎡 تجربة! معك 1 دقيقة تشارك! كبس شارك 🎡", reply_markup=InlineKeyboardMarkup(keyboard))
+    context.job_queue.run_once(wheel_end, 60, chat_id=GROUP_CHAT_ID, name="wheel_end")
+
+async def wheel_end(context):
+    global wheel_active
+    if not wheel_active:
+        return
     wheel_active = False
     if not wheel_participants:
-        await update.message.reply_text("😔 ما حد شارك بالتجربة")
+        await context.bot.send_message(chat_id=GROUP_CHAT_ID, text="😔 ما حد شارك بالتجربة")
         return
     winner_id = random.choice(list(wheel_participants))
-    await update.message.reply_text(f"🎉 مبروك للفائز بالتجربة: {winner_id}!")
-
+    await context.bot.send_message(chat_id=GROUP_CHAT_ID, text=f"🎡 مبروك الفائز بالتجربة: {winner_id}!")
 
 
 def main():
