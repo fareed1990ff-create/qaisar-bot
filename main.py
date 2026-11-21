@@ -304,6 +304,8 @@ async def update_user_tag(context, chat_id, user_id, rank_name):
             return False
 
 def add_points(user_id, amount):
+        if str(user_id) == "777000":
+           return
     with _LOCK:
         uid = str(user_id)
         if uid not in USERS:
