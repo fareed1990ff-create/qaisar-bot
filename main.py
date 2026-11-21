@@ -334,7 +334,7 @@ def add_coins(user_id, amount):
             USERS[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
         USERS[uid].setdefault("coins", 0)
         USERS[uid]["coins"] += amount
-            if amount > 0:
+        if amount > 0:
         add_daily_gold(uid, USERS[uid].get("name", "لاعب"), amount)
         save_one_user(user_id)
         return USERS[uid]["coins"]
