@@ -46,6 +46,9 @@ GROUP_IDS = set()
 ACTIVE_QUIZZES = {}
 WEEKLY = {}
 HERO_JOB_STARTED = False
+# ===== توب يومي - عداد مؤقت فقط =====
+DAILY_POINTS = {}
+DAILY_GOLD = {}
 # ===== نظام التوقعات اليومي - ايران =====
 PREDICTIONS = {}  # user_id -> {"name":..., "ans": "ah" / "la"}
 POLL_MESSAGES = {}  # chat_id -> message_id
