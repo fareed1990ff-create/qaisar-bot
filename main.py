@@ -313,6 +313,7 @@ def add_points(user_id, amount):
         u.setdefault("msg_count", 0)
         old_rank = get_rank_name(u["points"])
         u["points"] += amount
+                add_daily_points(uid, u.get("name", "لاعب"), amount)
         u["msg_count"] += 1
         
         new_rank = get_rank_name(u["points"])
@@ -333,8 +334,24 @@ def add_coins(user_id, amount):
             USERS[uid] = {"points": 0, "name": "", "coins": 0, "msg_count": 0}
         USERS[uid].setdefault("coins", 0)
         USERS[uid]["coins"] += amount
+            if amount > 0:
+        add_daily_gold(uid, USERS[uid].get("name", "لاعب"), amount)
         save_one_user(user_id)
         return USERS[uid]["coins"]
+        # ===== دوال التوب اليومي =====
+def add_daily_points(user_id, name, amount):
+    uid = str(user_id)
+    if uid not in DAILY_POINTS:
+        DAILY_POINTS[uid] = {"name": name, "points": 0}
+    DAILY_POINTS[uid]["points"] += amount
+    DAILY_POINTS[uid]["name"] = name
+
+def add_daily_gold(user_id, name, amount):
+    uid = str(user_id)
+    if uid not in DAILY_GOLD:
+        DAILY_GOLD[uid] = {"name": name, "gold": 0}
+    DAILY_GOLD[uid]["gold"] += amount
+    DAILY_GOLD[uid]["name"] = name
 from PIL import Image, ImageDraw, ImageFont
 import os
 import urllib.request
@@ -769,6 +786,53 @@ async def post_init(a):
     asyncio.create_task(weekly_hero_loop(a))
     asyncio.create_task(prediction_loop(a))
     asyncio.create_task(senario_loop(a))
+
+async def send_daily_top5(context):
+    if not DAILY_POINTS and not DAILY_GOLD:
+        return
+    top_points = sorted(DAILY_POINTS.items(), key=lambda x: x[1]["points"], reverse=True)[:5]
+    top_gold = sorted(DAILY_GOLD.items(), key=lambda x: x[1]["gold"], reverse=True)[:5]
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+    points_text = ""
+    for i, (uid, data) in enumerate(top_points):
+        extra = " +10 🪙" if i == 0 else ""
+        points_text += f"{medals[i]} {data['name']} - {data['points']} نقطة{extra}\n"
+    gold_text = ""
+    for i, (uid, data) in enumerate(top_gold):
+        extra = " +10 🪙" if i == 0 else ""
+        gold_text += f"{medals[i]} {data['name']} - {data['gold']} 🪙{extra}\n"
+    prize_text = ""
+    if top_points:
+        uid1, d1 = top_points[0]
+        new = add_coins(int(uid1), 10)
+        prize_text += f"🏆 {d1['name']} أول نقاط، ربح 10 🪙 (صار معو {new})\n"
+    if top_gold:
+        uid2, d2 = top_gold[0]
+        new2 = add_coins(int(uid2), 10)
+        prize_text += f"🪙 {d2['name']} أول ذهب، ربح 10 🪙 (صار معو {new2})\n"
+    text = f"🏆🏆 نتائج اليوم 🏆🏆\n\n📊 توب 5 نقاط:\n{points_text}\n🪙 توب 5 ذهب:\n{gold_text}\n🎁 جوائز:\n{prize_text}\n🔄 تصفير اليومي فقط، رصيدكم ما بروح"
+    for chat_id in list(GROUP_IDS):
+        try:
+            await context.bot.send_message(chat_id=chat_id, text=text)
+        except Exception as e:
+            print(f"Daily top failed {chat_id}: {e}")
+    DAILY_POINTS.clear()
+    DAILY_GOLD.clear()
+
+async def daily_top_cmd(update, context):
+    if not DAILY_POINTS and not DAILY_GOLD:
+        await update.message.reply_text("😴 لسه ما حد لعب اليوم!")
+        return
+    top_points = sorted(DAILY_POINTS.items(), key=lambda x: x[1]["points"], reverse=True)[:5]
+    top_gold = sorted(DAILY_GOLD.items(), key=lambda x: x[1]["gold"], reverse=True)[:5]
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+    t = "🏆 توب اليوم (مؤقت):\n\n📊 نقاط:\n"
+    for i, (uid, d) in enumerate(top_points):
+        t += f"{medals[i]} {d['name']} - {d['points']}\n"
+    t += "\n🪙 ذهب:\n"
+    for i, (uid, d) in enumerate(top_gold):
+        t += f"{medals[i]} {d['name']} - {d['gold']} 🪙\n"
+    await update.message.reply_text(t)
 # ===== بطل الأسبوع =====
 async def announce_weekly_hero(context):
     if not WEEKLY:
@@ -1487,6 +1551,8 @@ def main():
     # # عجلة الحظ كل يوم 9 المسا بتوقيت فلسطين
     tz = ZoneInfo("Asia/Hebron")
     app.job_queue.run_daily(send_wheel, time=dtime(hour=21, minute=0, tzinfo=tz))
+    app.job_queue.run_daily(send_daily_top5, time=dt_time(hour=0, minute=0, tzinfo=ZoneInfo("Asia/Hebron")))
+    app.add_handler(CommandHandler("daily_top", daily_top_cmd))
     app.add_handler(MessageHandler(filters.Regex(r"^(عجلة|/عجلة)$"), wheel_test))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("harb", cmd_harb))
