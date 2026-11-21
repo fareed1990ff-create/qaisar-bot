@@ -330,6 +330,8 @@ def add_points(user_id, amount):
         return u["points"], got_coin, rank_up, new_rank
 
 def add_coins(user_id, amount):
+        if str(user_id) == "777000":
+           return
     with _LOCK:
         uid = str(user_id)
         if uid not in USERS:
@@ -342,6 +344,8 @@ def add_coins(user_id, amount):
         return USERS[uid]["coins"]
         # ===== دوال التوب اليومي =====
 def add_daily_points(user_id, name, amount):
+        if str(user_id) == "777000":
+           return
     uid = str(user_id)
     if uid not in DAILY_POINTS:
         DAILY_POINTS[uid] = {"name": name, "points": 0}
@@ -349,6 +353,8 @@ def add_daily_points(user_id, name, amount):
     DAILY_POINTS[uid]["name"] = name
 
 def add_daily_gold(user_id, name, amount):
+        if str(user_id) == "777000":
+           return
     uid = str(user_id)
     if uid not in DAILY_GOLD:
         DAILY_GOLD[uid] = {"name": name, "gold": 0}
