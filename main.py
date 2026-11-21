@@ -313,7 +313,7 @@ def add_points(user_id, amount):
         u.setdefault("msg_count", 0)
         old_rank = get_rank_name(u["points"])
         u["points"] += amount
-           add_daily_points(uid, u.get("name", "لاعب"), amount)
+        add_daily_points(uid, u.get("name", "لاعب"), amount)
         u["msg_count"] += 1
         
         new_rank = get_rank_name(u["points"])
